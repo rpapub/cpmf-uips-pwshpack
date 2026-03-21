@@ -16,12 +16,19 @@
     "isAttended": false,
     "requiresUserInteraction": false,
     "supportsPersistence": false,
-    "excludedLoggedData": [],
+    "workflowSerialization": "DataContract",
+    "excludedLoggedData": [
+      "Private:*",
+      "*password*"
+    ],
     "executionType": "Workflow",
-    "mustRestoreAllDependencies": false
+    "readyForPiP": false,
+    "startsInPiP": false,
+    "mustRestoreAllDependencies": false,
+    "pipType": "ChildSession"
   },
   "designOptions": {
-    "projectProfile": "Development",
+    "projectProfile": "Developement",
     "outputType": "Process",
     "libraryOptions": {
       "includeOriginalXaml": false,
@@ -31,7 +38,8 @@
       "ignoredFiles": []
     },
     "fileInfoCollection": [],
-    "modernBehavior": false
+    "modernBehavior": false,
+    "saveToCloud": false
   },
   "expressionLanguage": "VisualBasic",
   "entryPoints": [
@@ -42,5 +50,8 @@
       "output": []
     }
   ],
+  "isTemplate": false,
+  "templateProjectData": {},
+  "publishData": {},
   "targetFramework": "Windows"
 }

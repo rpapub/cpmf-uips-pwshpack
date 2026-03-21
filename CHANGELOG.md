@@ -7,6 +7,31 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.1] — 2026-03-21
+
+### Fixed
+
+- **Silent uipcli output on failure** — `INITIALIZATION:`, `PREPROCESSING:`, `COMPILER:`,
+  repeated `CS1701` assembly-version warnings, empty lines, and the telemetry notice are
+  now demoted to `Write-Verbose` even on failure. Only actionable lines (compile errors,
+  failure summaries, exceptions) reach `Write-Warning`.
+- **File-lock on repeated packs** — `Invoke-PackAndStage` now writes to a per-invocation
+  GUID temp folder instead of a fixed `.pack-output` directory, eliminating the Windows
+  file-lock that prevented back-to-back invocations. Temp folder is cleaned up in a
+  `finally` block.
+- **Fixture `projectProfile` incompatibility** — removed the `projectProfile` field from
+  the `MinimalProcess` test fixture; uipcli 23.x does not recognise the `"Development"` enum
+  value and rejected the pack. Committed the normalised fields uipcli adds on first pack.
+
+### Added
+
+- **`-PackFixture` switch in `scripts/Test-LocalInstall.ps1`** — after the Pester run,
+  optionally invokes `Invoke-CpmfUipsPack -NoBump` against the repo-local zero-dependency
+  fixture at `CpmfUipsPack/tests/fixtures/MinimalProcess/project.json` and exits 1 on
+  failure.
+
+---
+
 ## [0.1.0] — 2026-03-21
 
 Initial release.

@@ -38,6 +38,7 @@ function Install-CpmfUipsPackCommandLineTool {
         if (Test-Path $p.DotnetMarker) {
             Write-Verbose "[Install] .NET 6.0.36 already installed — skipping"
         } elseif ($PSCmdlet.ShouldProcess($p.DotnetDir, 'Install .NET 6.0.36 (base + WindowsDesktop)')) {
+            Write-Progress -Activity 'CpmfUipsPack: install' -Status 'Downloading .NET 6.0.36 runtime …'
             Write-Verbose "[Install] Installing .NET 6.0.36 into $($p.DotnetDir) ..."
             $null = New-Item -ItemType Directory -Path $p.DotnetDir -Force
             $installScript = Join-Path ([System.IO.Path]::GetTempPath()) 'dotnet-install.ps1'
@@ -91,6 +92,7 @@ function Install-CpmfUipsPackCommandLineTool {
 
         if (-not $PSCmdlet.ShouldProcess($p.CliToolDir, "Download and extract uipcli $CliVersion")) { return }
 
+        Write-Progress -Activity 'CpmfUipsPack: install' -Status "Downloading uipcli $CliVersion …"
         $feedBase     = 'https://uipath.pkgs.visualstudio.com/Public.Feeds/_packaging/UiPath-Official/nuget/v3/flat2/uipath.cli.windows'
         $nupkgUrl     = "$feedBase/$CliVersion/uipath.cli.windows.$CliVersion.nupkg"
         $downloadPath = Join-Path $p.CliToolDir 'uipcli.nupkg'
@@ -111,6 +113,7 @@ function Install-CpmfUipsPackCommandLineTool {
             Remove-Item $downloadPath -Force -ErrorAction SilentlyContinue
         }
 
+        Write-Progress -Activity 'CpmfUipsPack: install' -Completed
         Write-Verbose "[Install] Installed uipcli $CliVersion at $($p.UipcliExe)"
 
     } else {

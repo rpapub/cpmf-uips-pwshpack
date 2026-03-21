@@ -16,6 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Trust PSGallery
+        shell: pwsh
+        run: Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+
       - name: Install Pester
         shell: pwsh
         run: |

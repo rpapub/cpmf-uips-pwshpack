@@ -33,6 +33,15 @@
     # Run and clean up afterwards
     .\scripts\Test-LocalInstall.ps1 -Cleanup
 
+.EXAMPLE
+    # Run a live pack against the repo fixture project
+    .\scripts\Test-LocalInstall.ps1 -PackFixture
+
+.PARAMETER PackFixture
+    After the Pester run, invoke Invoke-CpmfUipsPack against the repo-local
+    MinimalProcess fixture (CpmfUipsPack\tests\fixtures\MinimalProcess\project.json).
+    Requires uipcli to be installed.
+
 .NOTES
     For the PSGallery variant, replace step 1 with:
         Install-Module CpmfUipsPack -Repository PSGallery -Scope CurrentUser -Force
@@ -42,7 +51,8 @@
 param(
     [string]$RepoRoot  = (Split-Path $PSScriptRoot -Parent),
     [switch]$Cleanup,
-    [switch]$SkipInstall
+    [switch]$SkipInstall,
+    [switch]$PackFixture
 )
 
 Set-StrictMode -Version Latest
@@ -99,6 +109,25 @@ if ($result.FailedCount -eq 0) {
     Write-Host "[Test-LocalInstall] FAIL — $($result.FailedCount) failed, $($result.PassedCount) passed." -ForegroundColor Red
 }
 
+# ── Step 4b: optional live pack against repo fixture ─────────────────────────
+$fixtureResult = $null
+if ($PackFixture) {
+    $fixtureJson = Join-Path $RepoRoot 'CpmfUipsPack' 'tests' 'fixtures' 'MinimalProcess' 'project.json'
+    if (-not (Test-Path $fixtureJson)) {
+        Write-Warning "[Test-LocalInstall] Fixture not found: $fixtureJson — skipping -PackFixture"
+    } else {
+        Write-Host "[Test-LocalInstall] Running live pack against fixture: $fixtureJson"
+        try {
+            $null = Invoke-CpmfUipsPack -ProjectJson $fixtureJson -NoBump
+            $fixtureResult = $true
+            Write-Host "[Test-LocalInstall] PASS — fixture pack succeeded." -ForegroundColor Green
+        } catch {
+            $fixtureResult = $false
+            Write-Host "[Test-LocalInstall] FAIL — fixture pack failed: $_" -ForegroundColor Red
+        }
+    }
+}
+
 # ── Step 5: optional cleanup ──────────────────────────────────────────────────
 if ($Cleanup) {
     Remove-Module $moduleName -Force -ErrorAction SilentlyContinue
@@ -108,5 +137,8 @@ if ($Cleanup) {
 
 # Propagate failure to calling process
 if ($result.FailedCount -gt 0) {
+    exit 1
+}
+if ($fixtureResult -eq $false) {
     exit 1
 }

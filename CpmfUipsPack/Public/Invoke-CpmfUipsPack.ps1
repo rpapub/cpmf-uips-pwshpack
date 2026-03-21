@@ -320,8 +320,6 @@ function Invoke-PackAndStage {
         [string]  $TargetTag = ''
     )
 
-    $ProjectRoot = Split-Path $ProjectJson -Parent
-
     # Version bump (capture current for rollback)
     $versionBumped   = $false
     $previousVersion = Update-CpmfUipsPackProjectVersion -ProjectJson $ProjectJson -NoBump
@@ -334,23 +332,25 @@ function Invoke-PackAndStage {
         Write-Verbose "[Publish] Version bump skipped (-NoBump). Current: $previousVersion"
     }
 
+    $TempOutputDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
     try {
-        $OutputDir = Join-Path $ProjectRoot '.pack-output'
-        $null = New-Item -ItemType Directory -Path $OutputDir -Force
+        $null = New-Item -ItemType Directory -Path $TempOutputDir -Force
 
         if ($PSCmdlet.ShouldProcess($ProjectJson, 'Pack with uipcli and stage to feed')) {
             $label = if ($TargetTag) { " [$TargetTag]" } else { '' }
-            Write-Verbose "[Publish] Packing with uipcli$label"
-            $packArgs = @('package', 'pack', $ProjectJson, '-o', $OutputDir)
+            $projectName = [System.IO.Path]::GetFileName((Split-Path $ProjectJson -Parent))
+
+            Write-Progress -Activity "CpmfUipsPack$label" -Status "Packing $projectName …" -PercentComplete 10
+            $packArgs = @('package', 'pack', $ProjectJson, '-o', $TempOutputDir)
             if ($env:UIPATH_DISABLE_TELEMETRY) { $packArgs += '--disableTelemetry' }
             if ($UipcliArgs.Count -gt 0) { $packArgs += $UipcliArgs }
             $exitCode = Invoke-UipcliPack -UipcliExe $UipcliExe -PackArgs $packArgs
+            Write-Progress -Activity "CpmfUipsPack$label" -Completed
             if ($exitCode -ne 0) { throw "uipcli pack failed (exit $exitCode)" }
 
-            $nupkg = Get-ChildItem -Path $OutputDir -Filter '*.nupkg' |
-                Sort-Object LastWriteTime -Descending |
+            $nupkg = Get-ChildItem -Path $TempOutputDir -Filter '*.nupkg' |
                 Select-Object -First 1
-            if (-not $nupkg) { throw "No .nupkg found in $OutputDir after pack" }
+            if (-not $nupkg) { throw "No .nupkg found in $TempOutputDir after pack" }
 
             $null = New-Item -ItemType Directory -Path $FeedPath -Force
             $destName = if ($TargetTag) {
@@ -359,16 +359,12 @@ function Invoke-PackAndStage {
                 $nupkg.Name
             }
             $dest = Join-Path $FeedPath $destName
+
+            Write-Progress -Activity "CpmfUipsPack$label" -Status "Staging $destName …" -PercentComplete 90
             Copy-Item -Path $nupkg.FullName -Destination $dest -Force
+            Write-Progress -Activity "CpmfUipsPack$label" -Completed
+
             Write-Verbose "[Publish] Copied: $destName → $FeedPath"
-
-            # Prune .pack-output\ — keep the 3 most recent .nupkg files
-            Get-ChildItem -Path $OutputDir -Filter '*.nupkg' |
-                Sort-Object LastWriteTime -Descending |
-                Select-Object -Skip 3 |
-                Remove-Item -Force
-            Write-Verbose "[Publish] Done"
-
             Write-Output $dest
         }
     } catch {
@@ -379,5 +375,7 @@ function Invoke-PackAndStage {
             [System.IO.File]::WriteAllText($ProjectJson, $restored, (New-Object System.Text.UTF8Encoding $false))
         }
         throw
+    } finally {
+        Remove-Item -Path $TempOutputDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }

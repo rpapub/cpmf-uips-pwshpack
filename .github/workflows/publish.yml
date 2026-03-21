@@ -1,0 +1,83 @@
+name: Publish to PSGallery
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # needed for gh release create
+
+jobs:
+  publish:
+    name: Test, release, publish
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          if (-not (Get-Module Pester -ListAvailable | Where-Object Version -ge '5.0')) {
+            Install-Module Pester -Scope CurrentUser -Force -MinimumVersion 5.0
+          }
+
+      - name: Validate manifest
+        shell: pwsh
+        run: |
+          $m = Test-ModuleManifest ./CpmfUipsPack/CpmfUipsPack.psd1
+          $tag = '${{ github.ref_name }}' -replace '^v', ''
+          if ($m.Version.ToString() -ne $tag) {
+            Write-Error "Manifest version ($($m.Version)) does not match tag ($tag)"
+            exit 1
+          }
+          Write-Host "Manifest version $($m.Version) matches tag $tag"
+
+      - name: Run Pester
+        shell: pwsh
+        run: |
+          $result = Invoke-Pester ./CpmfUipsPack/tests/ -Output Normal -PassThru
+          if ($result.FailedCount -gt 0) {
+            Write-Error "Pester: $($result.FailedCount) test(s) failed"
+            exit 1
+          }
+
+      - name: Extract changelog entry
+        shell: pwsh
+        run: |
+          $tag     = '${{ github.ref_name }}'
+          $version = $tag -replace '^v', ''
+          $lines   = Get-Content ./CHANGELOG.md
+          $capture = $false
+          $fragment = [System.Collections.Generic.List[string]]::new()
+          foreach ($line in $lines) {
+            if ($line -match "^## \[$version\]") { $capture = $true; continue }
+            if ($capture -and $line -match '^## \[') { break }
+            if ($capture) { $fragment.Add($line) }
+          }
+          if ($fragment.Count -eq 0) {
+            Write-Error "No CHANGELOG entry found for version $version"
+            exit 1
+          }
+          $fragment | Set-Content ./CHANGELOG_fragment.md
+          Write-Host "Extracted $($fragment.Count) lines for $version"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.ref_name }} `
+            --title "CpmfUipsPack ${{ github.ref_name }}" `
+            --notes-file CHANGELOG_fragment.md
+
+      - name: Publish to PSGallery
+        shell: pwsh
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          Publish-Module `
+            -Path ./CpmfUipsPack `
+            -NuGetApiKey $env:PSGALLERY_API_KEY `
+            -Repository PSGallery `
+            -Verbose

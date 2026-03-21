@@ -1,0 +1,103 @@
+# Changelog
+
+All notable changes to CpmfUipsPack are documented here.
+
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [0.1.0] — 2026-03-21
+
+Initial release.
+
+### Added
+
+**Core pack workflow**
+- `Invoke-CpmfUipsPack` — bumps `projectVersion` in `project.json`, calls uipcli to
+  produce a `.nupkg`, and stages it to a local NuGet feed. Keeps the 3 most recent
+  builds in `.pack-output\`. Rolls back the version bump automatically if packing fails.
+
+**Version bump logic**
+- Plain versions (`1.2.3`) → minor increment → `1.3.0`
+- Pre-release segments (`1.2.3-alpha.4`) → `1.2.3-alpha.5`
+- Build metadata segments (`1.2.3+build.4`) → `1.2.3+build.5`
+- `Update-CpmfUipsPackProjectVersion` exposed as a standalone public function for
+  use in custom workflows.
+
+**Dual uipcli support — self-installed into user profile, no admin rights**
+- `net6` target: downloads .NET 6.0.36 (base + WindowsDesktop) and uipcli 23.x
+  (nupkg extraction) into `%LOCALAPPDATA%\cpmf\tools\`
+- `net8` target: downloads .NET 8 SDK and uipcli 25.x+ (dotnet tool install)
+  into `%LOCALAPPDATA%\cpmf\tools\dotnet8\`
+- `Install-CpmfUipsPackCommandLineTool` and `Uninstall-CpmfUipsPackCommandLineTool`
+  exposed as standalone public functions
+
+**Multi-target builds**
+- `-Targets @('net6','net8')` builds both families in one invocation; version is
+  bumped exactly once
+- Staged filenames gain a `.net6` / `.net8` infix when both targets are active to
+  avoid feed collisions
+
+**Library project MultiTfm merge**
+- `-MultiTfm` merges `lib/net6*` entries from the net6 build into the net8 nupkg,
+  producing a single multi-targeted package; patches the nuspec dependency group
+
+**Git worktree isolation**
+- `-UseWorktree` packs from a temporary `git worktree add HEAD` copy; working
+  directory and open Studio instances are never touched
+
+**Concurrency guard**
+- File-based mutex (`.uipath-pack.lock`) prevents two simultaneous pack operations
+  on the same project; warns, waits 10 s, retries once before failing
+
+**Four-layer configuration hierarchy**
+- Layer 1 — user config: `%LOCALAPPDATA%\cpmf\CpmfUipsPack\config.psd1`
+- Layer 2 — environment variables: `UIPS_FEEDPATH`, `UIPS_TARGETS`, `UIPS_NO_BUMP`, …
+- Layer 3 — project config: `-ConfigFile .\uipath-pack.psd1`
+- Layer 4 — explicit parameters (always win)
+- `Install-CpmfUipsPackConfig` / `Uninstall-CpmfUipsPackConfig` scaffold and remove
+  the user-level config file
+
+**Git pre-push hook**
+- `Install-CpmfUipsPackGitHook` installs a pre-push hook that runs
+  `Invoke-CpmfUipsPack` automatically on every `git push`
+
+**Diagnostics**
+- `Get-CpmfUipsPackDiagnostics` generates a pseudonymized environment report
+  (OS, PowerShell version, managed tool paths, UIPS_* env var presence) safe
+  for pasting into a GitHub issue
+- Report is returned as `[string[]]` via the pipeline — capturable by wrapper
+  modules and scripts; use `$report = Get-CpmfUipsPackDiagnostics` to collect
+
+**Stream discipline — wrapper-safe output**
+- All progress and status messages use `Write-Verbose` (off by default; opt in
+  with `-Verbose`). No `Write-Host` anywhere in live code.
+- Pipeline output (`Write-Output`) is reserved for machine-readable results:
+  staged `.nupkg` paths from `Invoke-CpmfUipsPack`; version strings from
+  `Update-CpmfUipsPackProjectVersion`; the diagnostics report from
+  `Get-CpmfUipsPackDiagnostics`.
+- This makes the module safe to use as a `RequiredModules` dependency in a
+  wrapper module (e.g. `CpmfUipsCLI`) without console pollution.
+
+**CI/CD workflows**
+- `.github/workflows/ci.yml` — Pester + PSScriptAnalyzer on every push and
+  pull request to `development` and `main`
+- `.github/workflows/publish.yml` — tag-triggered PSGallery publish; guards:
+  manifest version must match tag; CHANGELOG entry for the version must exist
+
+**Reference documentation**
+- `docs/reference/*.md` — platyPS-generated per-function reference pages for
+  all 8 public functions
+- `CpmfUipsPack/en-US/CpmfUipsPack-help.xml` — MAML help file; enables
+  `Get-Help Invoke-CpmfUipsPack -Full` from the installed module
+- `docs/diagrams.md` — 12 Mermaid architecture diagrams (module overview,
+  execution flow, config hierarchy, uipcli family decision, install flow,
+  version bump, multi-target sequence, worktree sequence, file lock,
+  MultiTfm merge, API surface, tool path layout)
+
+**PSGallery discovery**
+- Tag `cpmf-uips` added to manifest — use `Find-Module -Tag 'cpmf-uips'` to
+  discover all modules in the Cpmf UiPath integration family
+
+[0.1.0]: https://github.com/rpapub/cpmf-uips-pwshpack/releases/tag/v0.1.0

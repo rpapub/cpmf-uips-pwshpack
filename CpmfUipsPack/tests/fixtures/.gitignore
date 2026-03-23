@@ -1,0 +1,5 @@
+# UiPath Studio runtime artifacts — never commit
+.local/
+.project/
+.settings/
+.tmh/

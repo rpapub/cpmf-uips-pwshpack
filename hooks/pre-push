@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+ROOT="$(git rev-parse --show-toplevel)"
+exec pwsh -NoProfile -File "$ROOT/scripts/Invoke-PrePushChecks.ps1"

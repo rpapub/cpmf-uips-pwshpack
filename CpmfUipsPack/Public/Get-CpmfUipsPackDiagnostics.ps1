@@ -56,7 +56,7 @@ function Get-CpmfUipsPackDiagnostics {
 
     # managed tool paths
     $toolBase   = Join-Path $env:LOCALAPPDATA 'cpmf\tools'
-    $dotnet6Dir = Join-Path $toolBase 'dotnet'
+    $dotnet6Dir = Join-Path $toolBase 'dotnet6'
     $dotnet8Dir = Join-Path $toolBase 'dotnet8'
 
     # uipcli versions installed under toolBase
@@ -94,7 +94,7 @@ function Get-CpmfUipsPackDiagnostics {
         "Architecture     : $arch"
         ''
         '-- Managed tool paths (%LOCALAPPDATA%\cpmf\tools\) --'
-        "  dotnet  (net6) : $(DirStatus $dotnet6Dir)"
+        "  dotnet6 (net6) : $(DirStatus $dotnet6Dir)"
         "  dotnet8 (net8) : $(DirStatus $dotnet8Dir)"
         "  uipcli dirs    : $(if ($cliDirs.Count) { $cliDirs -join ', ' } else { 'none' })"
         "  drive space    : $diskFree"

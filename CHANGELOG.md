@@ -7,6 +7,28 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.1.2] — 2026-03-23
+
+### Changed
+
+- **Managed .NET 6 tool folder renamed** from `dotnet\` to `dotnet6\`
+  (`%LOCALAPPDATA%\cpmf\tools\dotnet6\`). The .NET 8 folder was already named
+  `dotnet8\`; this makes the naming symmetric and unambiguous.
+
+### Migration
+
+Users with an existing `dotnet\` install have two options:
+
+```powershell
+# Option A — rename in place (no re-download)
+Rename-Item "$env:LOCALAPPDATA\cpmf\tools\dotnet" dotnet6
+
+# Option B — re-run the installer (re-downloads .NET 6.0.36)
+Install-CpmfUipsPackCommandLineTool
+```
+
+---
+
 ## [0.1.1] — 2026-03-21
 
 ### Fixed

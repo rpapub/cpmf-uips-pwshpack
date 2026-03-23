@@ -31,7 +31,7 @@
 
     # ── Tools root ───────────────────────────────────────────────────────────
     # Root directory for self-installed .NET runtimes and uipcli binaries.
-    #   net6: <ToolBase>\dotnet\        + <ToolBase>\uipcli-<ver>\extracted\
+    #   net6: <ToolBase>\dotnet6\       + <ToolBase>\uipcli-<ver>\extracted\
     #   net8: <ToolBase>\dotnet8\       + <ToolBase>\uipcli-<ver>\
     ToolBase = '%LOCALAPPDATA%\cpmf\tools'
 

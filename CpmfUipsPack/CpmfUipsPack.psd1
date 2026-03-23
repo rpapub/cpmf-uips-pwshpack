@@ -1,6 +1,6 @@
 @{
     RootModule        = 'CpmfUipsPack.psm1'
-    ModuleVersion     = '0.1.1'
+    ModuleVersion     = '0.1.2'
     GUID              = '6cc9c20d-f534-483d-851f-a9441b56d4e9'
     Author            = 'Christian Prior-Mamulyan'
     CompanyName       = 'cprima'
@@ -27,7 +27,7 @@
             Tags        = @('UiPath', 'RPA', 'NuGet', 'CI', 'pack', 'cpmf-uips')
             LicenseUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/LICENSE'
             ProjectUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack'
-            ReleaseNotes = 'Patch fixes: uipcli failure output now shows only actionable errors (INITIALIZATION/PREPROCESSING/COMPILER noise suppressed); per-invocation GUID temp folder eliminates file-lock on back-to-back packs. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
+            ReleaseNotes = 'Rename managed .NET 6 tool folder from dotnet\ to dotnet6\ for clarity (dotnet8\ was already version-suffixed). Existing installs: rename %LOCALAPPDATA%\cpmf\tools\dotnet to dotnet6, or re-run Install-CpmfUipsPackCommandLineTool. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
         }
     }
 }

@@ -6,8 +6,8 @@ function Get-CpmfUipsToolPaths {
 
     if ($CliVersion -match '^23\.') {
         # Classic nupkg extraction — requires .NET 6 (base + WindowsDesktop)
-        $dotnetDir    = Join-Path $ToolBase 'dotnet'
-        $dotnetToken  = '%LOCALAPPDATA%\cpmf\tools\dotnet'
+        $dotnetDir    = Join-Path $ToolBase 'dotnet6'
+        $dotnetToken  = '%LOCALAPPDATA%\cpmf\tools\dotnet6'
         $dotnetMarker = Join-Path $dotnetDir "shared\Microsoft.WindowsDesktop.App\6.0.36"
         $uipcliExe    = Join-Path $ToolBase "uipcli-$CliVersion\extracted\tools\uipcli.exe"
         $generation   = 'classic'

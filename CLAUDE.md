@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A PowerShell 7 module (`CpmfUipsPack`) that automates packing a UiPath project into a `.nupkg`
 and staging it to a local NuGet feed. It self-installs its own dependencies (no admin rights required):
 
-- .NET 6.0.36 base + WindowsDesktop runtimes → `%LOCALAPPDATA%\cpmf\tools\dotnet\`
+- .NET 6.0.36 base + WindowsDesktop runtimes → `%LOCALAPPDATA%\cpmf\tools\dotnet6\`
 - UiPath CLI (uipcli) 23.10.2.6 → `%LOCALAPPDATA%\cpmf\tools\uipcli-23.10.2.6\`
 
 The repo also contains the original monolithic `Invoke-UiPathPack.ps1` gist at the root — preserved

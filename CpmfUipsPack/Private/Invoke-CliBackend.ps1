@@ -37,16 +37,15 @@ function Invoke-CliBackend {
             }
         }
     } else {
-        # uipathcli (Go binary) — operates on the project folder, not the .json file
-        $projectDir = Split-Path $ProjectJson -Parent
+        # uipathcli (Go binary) — syntax: uipath studio package <op> --source <path> ...
         switch ($Op) {
             'pack' {
-                $packArgs = @('package', 'pack', '--project-path', $projectDir, '--output-folder', $OutputDir)
+                $packArgs = @('studio', 'package', 'pack', '--source', $ProjectJson, '--destination', $OutputDir)
                 if ($ExtraArgs.Count -gt 0) { $packArgs += $ExtraArgs }
                 return Invoke-UipathcliCommand -UipathcliExe $UipathcliExe -CliArgs $packArgs
             }
             'analyze' {
-                $analyzeArgs = @('analyze', '--project-path', $projectDir)
+                $analyzeArgs = @('studio', 'package', 'analyze', '--source', $ProjectJson)
                 if ($ExtraArgs.Count -gt 0) { $analyzeArgs += $ExtraArgs }
                 return Invoke-UipathcliCommand -UipathcliExe $UipathcliExe -CliArgs $analyzeArgs
             }

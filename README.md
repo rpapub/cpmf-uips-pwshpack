@@ -23,6 +23,17 @@ Everything else (.NET runtimes, uipcli) is downloaded and installed automaticall
 Install-Module CpmfUipsPack -Scope CurrentUser
 ```
 
+### Update
+
+```powershell
+# If originally installed via Install-Module:
+Update-Module CpmfUipsPack
+
+# If installed any other way (local copy, manual import, etc.):
+Install-Module CpmfUipsPack -Scope CurrentUser -Force
+Import-Module CpmfUipsPack -Force
+```
+
 ---
 
 ## Quick start

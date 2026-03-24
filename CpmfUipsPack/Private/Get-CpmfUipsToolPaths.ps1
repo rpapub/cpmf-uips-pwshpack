@@ -22,13 +22,15 @@ function Get-CpmfUipsToolPaths {
     }
 
     @{
-        CliVersion   = $CliVersion
-        ToolBase     = $ToolBase
-        Generation   = $generation
-        DotnetDir    = $dotnetDir
-        DotnetToken  = $dotnetToken
-        DotnetMarker = $dotnetMarker
-        CliToolDir   = Join-Path $ToolBase "uipcli-$CliVersion"
-        UipcliExe    = $uipcliExe
+        CliVersion      = $CliVersion
+        ToolBase        = $ToolBase
+        Generation      = $generation
+        DotnetDir       = $dotnetDir
+        DotnetToken     = $dotnetToken
+        DotnetMarker    = $dotnetMarker
+        CliToolDir      = Join-Path $ToolBase "uipcli-$CliVersion"
+        UipcliExe       = $uipcliExe
+        UipathcliDir    = Join-Path $ToolBase 'uipathcli'
+        UipathcliExe    = Join-Path $ToolBase 'uipathcli\uipathcli.exe'
     }
 }

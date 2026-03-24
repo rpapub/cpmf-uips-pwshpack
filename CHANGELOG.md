@@ -7,6 +7,24 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.0] — 2026-03-24
+
+### Added
+
+- **CLI adapter pattern** — `Invoke-CpmfUipsPack` gains a `-Backend` parameter
+  (`'uipcli'` default | `'uipathcli'`). The new private `Invoke-CliBackend`
+  function translates pack/analyze operations into the correct argument format
+  for each CLI implementation.
+- **`Invoke-CpmfUipsAnalyze`** — new public function that runs the UiPath
+  workflow analyzer via either backend and returns output as `[string[]]`.
+- **`Install-UipathcliTool` / `Uninstall-UipathcliTool`** — self-installs the
+  uipathcli Go binary (https://github.com/UiPath/uipathcli) into
+  `%LOCALAPPDATA%\cpmf\tools\uipathcli\`. Idempotent, no admin rights required.
+- **`Get-CpmfUipsToolPaths`** — now returns `UipathcliDir` and `UipathcliExe`
+  in its hashtable regardless of `CliVersion`.
+
+---
+
 ## [0.1.2] — 2026-03-23
 
 ### Changed

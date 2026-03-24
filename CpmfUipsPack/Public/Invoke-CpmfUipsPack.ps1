@@ -258,8 +258,10 @@ function Invoke-MultiTargetPack {
         [string]   $ToolBase
     )
 
-    $results      = [System.Collections.Generic.List[string]]::new()
-    $isFirstTarget = $true
+    $results        = [System.Collections.Generic.List[string]]::new()
+    $isFirstTarget  = $true
+    # Computed once — independent of uipcli version
+    $uipathcliExe   = Join-Path $ToolBase 'uipathcli\uipathcli.exe'
 
     foreach ($target in $Targets) {
         $cliVer    = if ($target -eq 'net6') { $CliVersionNet6 } else { $CliVersionNet8 }
@@ -277,7 +279,7 @@ function Invoke-MultiTargetPack {
             -Backend        $Backend `
             -NoBump:$thisBump `
             -UipcliExe      $p.UipcliExe `
-            -UipathcliExe   $p.UipathcliExe `
+            -UipathcliExe   $uipathcliExe `
             -TargetTag      $targetTag
 
         if ($staged) { $results.Add($staged) }

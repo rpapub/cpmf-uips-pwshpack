@@ -1,6 +1,6 @@
 @{
     RootModule        = 'CpmfUipsPack.psm1'
-    ModuleVersion     = '0.1.2'
+    ModuleVersion     = '0.2.0'
     GUID              = '6cc9c20d-f534-483d-851f-a9441b56d4e9'
     Author            = 'Christian Prior-Mamulyan'
     CompanyName       = 'cprima'
@@ -10,8 +10,11 @@
 
     FunctionsToExport = @(
         'Invoke-CpmfUipsPack'
+        'Invoke-CpmfUipsAnalyze'
         'Install-CpmfUipsPackCommandLineTool'
         'Uninstall-CpmfUipsPackCommandLineTool'
+        'Install-UipathcliTool'
+        'Uninstall-UipathcliTool'
         'Update-CpmfUipsPackProjectVersion'
         'Install-CpmfUipsPackGitHook'
         'Install-CpmfUipsPackConfig'
@@ -27,7 +30,7 @@
             Tags        = @('UiPath', 'RPA', 'NuGet', 'CI', 'pack', 'cpmf-uips')
             LicenseUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/LICENSE'
             ProjectUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack'
-            ReleaseNotes = 'Rename managed .NET 6 tool folder from dotnet\ to dotnet6\ for clarity (dotnet8\ was already version-suffixed). Existing installs: rename %LOCALAPPDATA%\cpmf\tools\dotnet to dotnet6, or re-run Install-CpmfUipsPackCommandLineTool. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
+            ReleaseNotes = 'Add CLI adapter pattern: -Backend uipcli|uipathcli on Invoke-CpmfUipsPack and new Invoke-CpmfUipsAnalyze. Install-UipathcliTool/Uninstall-UipathcliTool manage the Go binary. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
         }
     }
 }

@@ -100,6 +100,8 @@ function Invoke-CpmfUipsPack {
         [string]  $ProjectJson     = (Join-Path $PSScriptRoot '..\project.json'),
         [string]  $FeedPath        = 'C:\Users\Public\nugetfeed',
         [string[]]$UipcliArgs      = @(),
+        [ValidateSet('uipcli', 'uipathcli')]
+        [string]  $Backend         = 'uipcli',
         [switch]  $NoBump,
         [switch]  $SkipInstall,
         [switch]  $UseWorktree,
@@ -172,9 +174,13 @@ function Invoke-CpmfUipsPack {
 
     # Pre-install all requested CLI versions before acquiring the lock
     if (-not $SkipInstall) {
-        foreach ($target in $Targets) {
-            $cliVer = if ($target -eq 'net6') { $CliVersionNet6 } else { $CliVersionNet8 }
-            Install-CpmfUipsPackCommandLineTool -CliVersion $cliVer -ToolBase $ToolBase
+        if ($Backend -eq 'uipathcli') {
+            Install-UipathcliTool -ToolBase $ToolBase
+        } else {
+            foreach ($target in $Targets) {
+                $cliVer = if ($target -eq 'net6') { $CliVersionNet6 } else { $CliVersionNet8 }
+                Install-CpmfUipsPackCommandLineTool -CliVersion $cliVer -ToolBase $ToolBase
+            }
         }
     }
 
@@ -207,6 +213,7 @@ function Invoke-CpmfUipsPack {
                 -ProjectJson     $wtProjectJson `
                 -FeedPath        $FeedPath `
                 -UipcliArgs      $UipcliArgs `
+                -Backend         $Backend `
                 -NoBump:$NoBump `
                 -Targets         $Targets `
                 -CliVersionNet6  $CliVersionNet6 `
@@ -219,6 +226,7 @@ function Invoke-CpmfUipsPack {
             -ProjectJson     $ProjectJson `
             -FeedPath        $FeedPath `
             -UipcliArgs      $UipcliArgs `
+            -Backend         $Backend `
             -NoBump:$NoBump `
             -Targets         $Targets `
             -CliVersionNet6  $CliVersionNet6 `
@@ -241,6 +249,7 @@ function Invoke-MultiTargetPack {
         [string]   $ProjectJson,
         [string]   $FeedPath,
         [string[]] $UipcliArgs,
+        [string]   $Backend = 'uipcli',
         [switch]   $NoBump,
         [string[]] $Targets,
         [string]   $CliVersionNet6,
@@ -249,8 +258,10 @@ function Invoke-MultiTargetPack {
         [string]   $ToolBase
     )
 
-    $results      = [System.Collections.Generic.List[string]]::new()
-    $isFirstTarget = $true
+    $results        = [System.Collections.Generic.List[string]]::new()
+    $isFirstTarget  = $true
+    # Computed once — independent of uipcli version
+    $uipathcliExe   = Join-Path $ToolBase 'uipathcli\uipathcli.exe'
 
     foreach ($target in $Targets) {
         $cliVer    = if ($target -eq 'net6') { $CliVersionNet6 } else { $CliVersionNet8 }
@@ -262,12 +273,14 @@ function Invoke-MultiTargetPack {
         $thisBump  = if ($isFirstTarget) { $NoBump } else { [switch]$true }
 
         $staged = Invoke-PackAndStage `
-            -ProjectJson $ProjectJson `
-            -FeedPath    $FeedPath `
-            -UipcliArgs  $UipcliArgs `
+            -ProjectJson    $ProjectJson `
+            -FeedPath       $FeedPath `
+            -UipcliArgs     $UipcliArgs `
+            -Backend        $Backend `
             -NoBump:$thisBump `
-            -UipcliExe   $p.UipcliExe `
-            -TargetTag   $targetTag
+            -UipcliExe      $p.UipcliExe `
+            -UipathcliExe   $uipathcliExe `
+            -TargetTag      $targetTag
 
         if ($staged) { $results.Add($staged) }
         $isFirstTarget = $false
@@ -315,9 +328,11 @@ function Invoke-PackAndStage {
         [string]  $ProjectJson,
         [string]  $FeedPath,
         [string[]]$UipcliArgs,
+        [string]  $Backend       = 'uipcli',
         [switch]  $NoBump,
         [string]  $UipcliExe,
-        [string]  $TargetTag = ''
+        [string]  $UipathcliExe  = '',
+        [string]  $TargetTag     = ''
     )
 
     # Version bump (capture current for rollback)
@@ -341,10 +356,14 @@ function Invoke-PackAndStage {
             $projectName = [System.IO.Path]::GetFileName((Split-Path $ProjectJson -Parent))
 
             Write-Progress -Activity "CpmfUipsPack$label" -Status "Packing $projectName …" -PercentComplete 10
-            $packArgs = @('package', 'pack', $ProjectJson, '-o', $TempOutputDir)
-            if ($env:UIPATH_DISABLE_TELEMETRY) { $packArgs += '--disableTelemetry' }
-            if ($UipcliArgs.Count -gt 0) { $packArgs += $UipcliArgs }
-            $exitCode = Invoke-UipcliPack -UipcliExe $UipcliExe -PackArgs $packArgs
+            $exitCode = Invoke-CliBackend `
+                -Op           pack `
+                -Backend      $Backend `
+                -UipcliExe    $UipcliExe `
+                -UipathcliExe $UipathcliExe `
+                -ProjectJson  $ProjectJson `
+                -OutputDir    $TempOutputDir `
+                -ExtraArgs    $UipcliArgs
             Write-Progress -Activity "CpmfUipsPack$label" -Completed
             if ($exitCode -ne 0) { throw "uipcli pack failed (exit $exitCode)" }
 

@@ -1,6 +1,6 @@
 @{
     RootModule        = 'CpmfUipsPack.psm1'
-    ModuleVersion     = '0.2.3'
+    ModuleVersion     = '0.2.4'
     GUID              = '6cc9c20d-f534-483d-851f-a9441b56d4e9'
     Author            = 'Christian Prior-Mamulyan'
     CompanyName       = 'cprima'
@@ -30,7 +30,7 @@
             Tags        = @('UiPath', 'RPA', 'NuGet', 'CI', 'pack', 'cpmf-uips')
             LicenseUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/LICENSE'
             ProjectUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack'
-            ReleaseNotes = 'Revert v0.2.2: remove auto-migration of dotnet\ folder introduced in error. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
+            ReleaseNotes = 'Fix StrictMode: initialize $LASTEXITCODE before dotnet-install.ps1 calls so Set-StrictMode -Version Latest does not throw. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
         }
     }
 }

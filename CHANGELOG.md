@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.1] — 2026-03-24
+
+### Fixed
+
+- **`Install-UipathcliTool`** — the GitHub release asset is a zip archive
+  (`uipathcli-windows-amd64.zip`) containing `uipath.exe`, not a bare `.exe`.
+  The installer now downloads the zip, extracts it, and cleans up the archive.
+  `UipathcliExe` path updated accordingly (`uipath.exe`).
+
+---
+
 ## [0.2.0] — 2026-03-24
 
 ### Added

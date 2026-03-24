@@ -33,25 +33,6 @@ function Install-CpmfUipsPackCommandLineTool {
     if ($CliVersion -match '^23\.') {
         # ── Classic path: .NET 6.0.36 (base + WindowsDesktop) + nupkg extraction ──
 
-        # Migrate legacy dotnet\ → dotnet6\ in place (v0.1.2 renamed the folder; existing
-        # installs are not automatically migrated and would trigger a needless re-download).
-        $legacyDotnetDir = Join-Path $ToolBase 'dotnet'
-        if ((Test-Path $legacyDotnetDir) -and -not (Test-Path $p.DotnetDir)) {
-            Write-Verbose "[Install] Migrating legacy dotnet\ to dotnet6\ ..."
-            Rename-Item $legacyDotnetDir $p.DotnetDir
-            $legacyToken = '%LOCALAPPDATA%\cpmf\tools\dotnet'
-            if (Remove-FromUserPath $legacyToken) {
-                Write-Verbose "[Install] Removed legacy $legacyToken from user PATH"
-            }
-            if (Add-ToUserPath $p.DotnetToken) {
-                Write-Verbose "[Install] Added $($p.DotnetToken) to user PATH"
-            }
-            $oldRoot = [Environment]::GetEnvironmentVariable('DOTNET_ROOT', 'User')
-            if ($oldRoot -eq $legacyDotnetDir) {
-                [Environment]::SetEnvironmentVariable('DOTNET_ROOT', $p.DotnetDir, 'User')
-            }
-        }
-
         Write-Verbose "[Install] Checking .NET 6.0.36 WindowsDesktop runtime in $($p.DotnetDir)"
 
         if (Test-Path $p.DotnetMarker) {

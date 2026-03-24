@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.2] — 2026-03-24
+
+### Fixed
+
+- **`Install-CpmfUipsPackCommandLineTool`** — automatically migrates the legacy
+  `dotnet\` folder to `dotnet6\` on first run after a v0.1.2 upgrade. Previously
+  the installer saw no `dotnet6\` marker and re-downloaded .NET 6.0.36 unnecessarily.
+  PATH and `DOTNET_ROOT` user environment entries are updated in the same step.
+  Closes #16.
+
+---
+
 ## [0.2.1] — 2026-03-24
 
 ### Fixed

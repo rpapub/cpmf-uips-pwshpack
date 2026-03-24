@@ -51,6 +51,7 @@ function Install-CpmfUipsPackCommandLineTool {
                     -TimeoutSec 120
 
                 Write-Verbose "[Install] Installing base runtime ..."
+                $LASTEXITCODE = 0
                 & $installScript -Runtime dotnet -Version 6.0.36 -InstallDir $p.DotnetDir
                 if ($LASTEXITCODE -ne 0) { throw "dotnet-install.ps1 (base) exited with code $LASTEXITCODE" }
                 if (-not (Test-Path (Join-Path $p.DotnetDir 'dotnet.exe'))) {
@@ -58,6 +59,7 @@ function Install-CpmfUipsPackCommandLineTool {
                 }
 
                 Write-Verbose "[Install] Installing WindowsDesktop runtime ..."
+                $LASTEXITCODE = 0
                 & $installScript -Runtime windowsdesktop -Version 6.0.36 -InstallDir $p.DotnetDir
                 if ($LASTEXITCODE -ne 0) { throw "dotnet-install.ps1 (windowsdesktop) exited with code $LASTEXITCODE" }
                 if (-not (Test-Path $p.DotnetMarker)) {
@@ -138,6 +140,7 @@ function Install-CpmfUipsPackCommandLineTool {
                     -TimeoutSec 120
 
                 # No -Runtime flag = SDK install (includes dotnet CLI for tool commands)
+                $LASTEXITCODE = 0
                 & $installScript -Channel 8.0 -InstallDir $p.DotnetDir
                 if ($LASTEXITCODE -ne 0) { throw "dotnet-install.ps1 (.NET 8 SDK) exited with code $LASTEXITCODE" }
                 if (-not (Test-Path $dotnetExe)) {

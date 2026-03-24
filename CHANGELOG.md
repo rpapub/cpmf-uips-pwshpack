@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.4] — 2026-03-24
+
+### Fixed
+
+- **`Install-CpmfUipsPackCommandLineTool`** — initialize `$LASTEXITCODE = 0` before
+  each `dotnet-install.ps1` invocation. PowerShell scripts do not set `$LASTEXITCODE`
+  as native executables do; under `Set-StrictMode -Version Latest` reading an unset
+  variable throws `PropertyNotFoundException`, aborting the install.
+
+---
+
 ## [0.2.3] — 2026-03-24
 
 ### Fixed

@@ -31,6 +31,6 @@ function Get-CpmfUipsToolPaths {
         CliToolDir      = Join-Path $ToolBase "uipcli-$CliVersion"
         UipcliExe       = $uipcliExe
         UipathcliDir    = Join-Path $ToolBase 'uipathcli'
-        UipathcliExe    = Join-Path $ToolBase 'uipathcli\uipathcli.exe'
+        UipathcliExe    = Join-Path $ToolBase 'uipathcli\uipath.exe'
     }
 }

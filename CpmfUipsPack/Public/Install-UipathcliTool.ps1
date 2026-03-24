@@ -33,15 +33,19 @@ function Install-UipathcliTool {
     $null = New-Item -ItemType Directory -Path $p.UipathcliDir -Force
 
     # Asset name pattern from https://github.com/UiPath/uipathcli/releases
-    # Windows amd64 binary. Adjust if the release asset naming changes.
-    $downloadUrl = 'https://github.com/UiPath/uipathcli/releases/latest/download/uipathcli_windows_amd64.exe'
+    # Windows amd64 zip containing uipath.exe
+    $downloadUrl = 'https://github.com/UiPath/uipathcli/releases/latest/download/uipathcli-windows-amd64.zip'
+    $zipPath     = Join-Path $p.UipathcliDir 'uipathcli-windows-amd64.zip'
 
     try {
         Invoke-WebRequest `
             -Uri        $downloadUrl `
-            -OutFile    $p.UipathcliExe `
+            -OutFile    $zipPath `
             -UseBasicParsing `
             -TimeoutSec 120
+
+        Expand-Archive -Path $zipPath -DestinationPath $p.UipathcliDir -Force
+        Remove-Item $zipPath -Force
 
         if (-not (Test-Path $p.UipathcliExe)) {
             throw "uipathcli download failed — binary not found at $($p.UipathcliExe)"

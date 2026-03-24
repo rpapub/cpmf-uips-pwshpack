@@ -1,6 +1,6 @@
 @{
     RootModule        = 'CpmfUipsPack.psm1'
-    ModuleVersion     = '0.2.0'
+    ModuleVersion     = '0.2.1'
     GUID              = '6cc9c20d-f534-483d-851f-a9441b56d4e9'
     Author            = 'Christian Prior-Mamulyan'
     CompanyName       = 'cprima'
@@ -30,7 +30,7 @@
             Tags        = @('UiPath', 'RPA', 'NuGet', 'CI', 'pack', 'cpmf-uips')
             LicenseUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/LICENSE'
             ProjectUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack'
-            ReleaseNotes = 'Add CLI adapter pattern: -Backend uipcli|uipathcli on Invoke-CpmfUipsPack and new Invoke-CpmfUipsAnalyze. Install-UipathcliTool/Uninstall-UipathcliTool manage the Go binary. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
+            ReleaseNotes = 'Fix Install-UipathcliTool: release asset is a zip (uipathcli-windows-amd64.zip containing uipath.exe), not a bare .exe. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
         }
     }
 }

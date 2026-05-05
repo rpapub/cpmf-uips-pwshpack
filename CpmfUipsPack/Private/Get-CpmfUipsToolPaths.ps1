@@ -1,10 +1,23 @@
 function Get-CpmfUipsToolPaths {
     param(
-        [string]$CliVersion = '23.10.2.6',
+        [string]$CliVersion = '25.10.15',
         [string]$ToolBase   = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
     )
 
-    if ($CliVersion -match '^23\.') {
+    # Dotnet global tool packaging was introduced in 25.10.2-20251124-7.
+    # Strip prerelease suffix (e.g. "25.10.2-20251124-7" → "25.10.2") for comparison.
+    $vBase  = ($CliVersion -split '-')[0]
+    $parts  = $vBase -split '\.'
+    $isDotnetTool = (
+        $parts.Count -ge 3 -and
+        (
+            [int]$parts[0] -gt 25 -or
+            ([int]$parts[0] -eq 25 -and [int]$parts[1] -gt 10) -or
+            ([int]$parts[0] -eq 25 -and [int]$parts[1] -eq 10 -and [int]$parts[2] -ge 2)
+        )
+    )
+
+    if (-not $isDotnetTool) {
         # Classic nupkg extraction — requires .NET 6 (base + WindowsDesktop)
         $dotnetDir    = Join-Path $ToolBase 'dotnet6'
         $dotnetToken  = '%LOCALAPPDATA%\cpmf\tools\dotnet6'
@@ -24,6 +37,7 @@ function Get-CpmfUipsToolPaths {
     @{
         CliVersion      = $CliVersion
         ToolBase        = $ToolBase
+        IsDotnetTool    = $isDotnetTool
         Generation      = $generation
         DotnetDir       = $dotnetDir
         DotnetToken     = $dotnetToken

@@ -5,14 +5,14 @@ function Uninstall-CpmfUipsPackCommandLineTool {
     and the associated PATH entry from the user environment registry.
 
 .PARAMETER CliVersion
-    UiPath CLI version to remove. Defaults to 23.10.2.6.
+    UiPath CLI version to remove. Defaults to 25.10.15.
 
 .PARAMETER ToolBase
     Root directory used during installation. Defaults to %LOCALAPPDATA%\cpmf\tools.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [string]$CliVersion = '23.10.2.6',
+        [string]$CliVersion = '25.10.15',
         [string]$ToolBase   = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
     )
 

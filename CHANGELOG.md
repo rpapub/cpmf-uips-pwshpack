@@ -7,6 +7,26 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.2.5] — 2026-05-05
+
+### Changed
+
+- **`Install-CpmfUipsPackCommandLineTool`** / **`Uninstall-CpmfUipsPackCommandLineTool`** — default
+  `CliVersion` changed from `23.10.2.6` to `25.10.15`.
+
+- **`Get-CpmfUipsToolPaths`** — version dispatch replaced: the `^23\.` regex is removed in favour of a
+  numeric comparison against the boundary version `25.10.2-20251124-7` (the first release that ships
+  `UiPath.CLI.Windows` as a dotnet global tool rather than a self-contained exe). All versions
+  `>= 25.10.2` use `dotnet tool install --tool-path`; all earlier versions use the classic nupkg
+  extraction path. The returned hashtable gains an `IsDotnetTool` boolean key.
+
+### Fixed
+
+- **Version dispatch** — `24.*` and `25.4.*` versions were incorrectly routed to the dotnet-tool path
+  by the old `^23\.` regex. They now correctly resolve to the classic path.
+
+---
+
 ## [0.2.4] — 2026-03-24
 
 ### Fixed

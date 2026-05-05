@@ -5,23 +5,23 @@ function Install-CpmfUipsPackCommandLineTool {
     profile (%LOCALAPPDATA%\cpmf\tools). No admin rights required. Idempotent:
     already-present artifacts are detected and skipped.
 
-    For uipcli 23.x (classic): downloads .NET 6.0.36 (base + WindowsDesktop)
+    For versions < 25.10.2 (classic): downloads .NET 6.0.36 (base + WindowsDesktop)
     and extracts uipcli from its NuGet package.
 
-    For uipcli 25.x+ (dotnet tool): downloads the .NET 8 SDK and installs
-    uipcli via `dotnet tool install` into the user profile.
+    For versions >= 25.10.2 (dotnet tool): downloads the .NET 8 SDK and installs
+    uipcli via `dotnet tool install --tool-path` into a versioned subdirectory.
 
 .PARAMETER CliVersion
-    UiPath CLI version to install. Defaults to 23.10.2.6.
-    Versions matching '^23\.' use the classic nupkg extraction path.
-    All other versions use the dotnet tool install path.
+    UiPath CLI version to install. Defaults to 25.10.15.
+    Versions >= 25.10.2-20251124-7 use dotnet global tool packaging.
+    All earlier versions use classic nupkg extraction.
 
 .PARAMETER ToolBase
     Root directory for all installed tools. Defaults to %LOCALAPPDATA%\cpmf\tools.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [string]$CliVersion = '23.10.2.6',
+        [string]$CliVersion = '25.10.15',
         [string]$ToolBase   = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
     )
 
@@ -30,7 +30,7 @@ function Install-CpmfUipsPackCommandLineTool {
 
     $p = Get-CpmfUipsToolPaths -CliVersion $CliVersion -ToolBase $ToolBase
 
-    if ($CliVersion -match '^23\.') {
+    if (-not $p.IsDotnetTool) {
         # ── Classic path: .NET 6.0.36 (base + WindowsDesktop) + nupkg extraction ──
 
         Write-Verbose "[Install] Checking .NET 6.0.36 WindowsDesktop runtime in $($p.DotnetDir)"

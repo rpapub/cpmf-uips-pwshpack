@@ -7,6 +7,29 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.3.0] — 2026-05-06
+
+### Changed
+
+- **Path-first tool resolution** — `CPMF_UIPS_UIPCLI_NET6_PATH`,
+  `CPMF_UIPS_UIPCLI_NET8_PATH`, and `CPMF_UIPS_TOOLBASE_PATH` are now
+  first-class inputs. Repo-root `cpmf-uips.psd1` supplies opinionated defaults,
+  env vars override config, and compatibility `UIPS_*` values are still honored
+  during the transition.
+
+- **`Invoke-CpmfUipsPack` / `Invoke-CpmfUipsAnalyze`** — accept the new path
+  inputs and surface a `-Version` shortcut for quick module version checks.
+
+- **`Get-CpmfUipsToolPaths`** — accepts an explicit `uipcli.exe` path and
+  derives the tool family from that path when present. `DotnetToken` now tracks
+  the actual resolved tool base instead of a hardcoded `%LOCALAPPDATA%` token.
+
+- **Local install helpers** — `Install-*` / `Uninstall-*` helpers now operate on
+  the path-first contract and remain compatible with the legacy version-based
+  inputs.
+
+---
+
 ## [0.2.5] — 2026-05-05
 
 ### Changed

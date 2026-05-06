@@ -6,16 +6,20 @@ function Uninstall-UipathcliTool {
 
 .PARAMETER ToolBase
     Root directory used during installation. Defaults to %LOCALAPPDATA%\cpmf\tools.
+
+.PARAMETER ToolBasePath
+    Canonical tool root directory. Same as -ToolBase; kept for the shared path-var naming convention.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [string]$ToolBase = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
+        [Alias('ToolBase')]
+        [string]$ToolBasePath = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
     )
 
     Set-StrictMode -Version Latest
     $ErrorActionPreference = 'Stop'
 
-    $p = Get-CpmfUipsToolPaths -ToolBase $ToolBase
+    $p = Get-CpmfUipsToolPaths -ToolBase $ToolBasePath
 
     Write-Verbose "[Uninstall] Removing uipathcli ..."
     if (Test-Path $p.UipathcliDir) {

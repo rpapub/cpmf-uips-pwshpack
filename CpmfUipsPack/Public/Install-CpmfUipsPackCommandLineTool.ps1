@@ -16,19 +16,27 @@ function Install-CpmfUipsPackCommandLineTool {
     Versions >= 25.10.2-20251124-7 use dotnet global tool packaging.
     All earlier versions use classic nupkg extraction.
 
+.PARAMETER UipcliPath
+    Optional absolute path to an existing uipcli.exe. Used to infer tool family and root path.
+
 .PARAMETER ToolBase
     Root directory for all installed tools. Defaults to %LOCALAPPDATA%\cpmf\tools.
+
+.PARAMETER ToolBasePath
+    Canonical tool root directory. Same as -ToolBase; kept for the shared path-var naming convention.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [string]$CliVersion = '25.10.15',
-        [string]$ToolBase   = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
+        [string]$UipcliPath,
+        [Alias('ToolBase')]
+        [string]$ToolBasePath = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
     )
 
     Set-StrictMode -Version Latest
     $ErrorActionPreference = 'Stop'
 
-    $p = Get-CpmfUipsToolPaths -CliVersion $CliVersion -ToolBase $ToolBase
+    $p = Get-CpmfUipsToolPaths -CliVersion $CliVersion -UipcliPath $UipcliPath -ToolBase $ToolBasePath
 
     if (-not $p.IsDotnetTool) {
         # ── Classic path: .NET 6.0.36 (base + WindowsDesktop) + nupkg extraction ──

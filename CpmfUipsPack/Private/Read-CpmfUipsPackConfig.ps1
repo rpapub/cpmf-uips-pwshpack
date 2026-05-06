@@ -29,6 +29,8 @@ function Read-CpmfUipsPackConfig {
         'UseWorktree', 'WorktreeBase', 'WorktreeSibling',
         'CliVersionNet6', 'CliVersionNet8', 'Targets', 'MultiTfm',
         'ToolBase',
+        'Backend',
+        'UipcliPathNet6', 'UipcliPathNet8', 'ToolBasePath',
         'CliVersion'   # deprecated — warns at runtime; use CliVersionNet6 or CliVersionNet8
     )
 

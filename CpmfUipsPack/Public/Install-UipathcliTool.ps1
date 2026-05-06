@@ -7,18 +7,22 @@ function Install-UipathcliTool {
 .PARAMETER ToolBase
     Root directory for all installed tools. Defaults to %LOCALAPPDATA%\cpmf\tools.
 
+.PARAMETER ToolBasePath
+    Canonical tool root directory. Same as -ToolBase; kept for the shared path-var naming convention.
+
 .LINK
     https://github.com/UiPath/uipathcli
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [string]$ToolBase = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
+        [Alias('ToolBase')]
+        [string]$ToolBasePath = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
     )
 
     Set-StrictMode -Version Latest
     $ErrorActionPreference = 'Stop'
 
-    $p = Get-CpmfUipsToolPaths -ToolBase $ToolBase
+    $p = Get-CpmfUipsToolPaths -ToolBase $ToolBasePath
 
     if (Test-Path $p.UipathcliExe) {
         Write-Verbose "[Install] uipathcli already installed — skipping"

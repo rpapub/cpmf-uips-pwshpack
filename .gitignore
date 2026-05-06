@@ -1,3 +1,6 @@
+# Claude Code local settings (personal, not for team)
+.claude/settings.local.json
+
 # PowerShell generated files
 *.ps1xml
 !CpmfUipsPack/en-US/*.xml

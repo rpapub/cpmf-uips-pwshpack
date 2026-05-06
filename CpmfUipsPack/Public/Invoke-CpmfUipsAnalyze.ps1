@@ -23,11 +23,20 @@ function Invoke-CpmfUipsAnalyze {
 .PARAMETER CliVersionNet8
     uipcli version for the net8 target. Default: 25.10.11.
 
+.PARAMETER UipcliPathNet6
+    Absolute path to the net6 uipcli.exe. Overrides version-based path inference when supplied.
+
+.PARAMETER UipcliPathNet8
+    Absolute path to the net8 uipcli.exe. Overrides version-based path inference when supplied.
+
 .PARAMETER SkipInstall
     Skip tool auto-install. Use when tools are already in place.
 
 .PARAMETER ToolBase
     Tool root directory. Defaults to %LOCALAPPDATA%\cpmf\tools.
+
+.PARAMETER ToolBasePath
+    Canonical tool root directory. Same as -ToolBase; kept for the shared path-var naming convention.
 
 .PARAMETER ConfigFile
     Path to a .psd1 config file for default values. Explicit parameters always win.
@@ -47,8 +56,11 @@ function Invoke-CpmfUipsAnalyze {
         [string[]]$Targets        = @('net6'),
         [string]  $CliVersionNet6 = '23.10.2.6',
         [string]  $CliVersionNet8 = '25.10.11',
+        [string]  $UipcliPathNet6,
+        [string]  $UipcliPathNet8,
         [switch]  $SkipInstall,
-        [string]  $ToolBase       = (Join-Path $env:LOCALAPPDATA 'cpmf\tools'),
+        [Alias('ToolBase')]
+        [string]  $ToolBasePath   = (Join-Path $env:LOCALAPPDATA 'cpmf\tools'),
         [string]  $ConfigFile     = '',
         [string[]]$UipcliArgs     = @()
     )
@@ -59,7 +71,7 @@ function Invoke-CpmfUipsAnalyze {
     # Apply layered config defaults
     $cfg = Get-CpmfUipsPackEffectiveConfig -ConfigFile $ConfigFile
 
-    foreach ($key in @('CliVersionNet6', 'CliVersionNet8', 'ToolBase')) {
+    foreach ($key in @('CliVersionNet6', 'CliVersionNet8', 'UipcliPathNet6', 'UipcliPathNet8', 'ToolBasePath', 'Backend')) {
         if (-not $PSBoundParameters.ContainsKey($key) -and $cfg.ContainsKey($key)) {
             Set-Variable -Name $key -Value $cfg[$key]
         }
@@ -84,11 +96,12 @@ function Invoke-CpmfUipsAnalyze {
 
     if (-not $SkipInstall) {
         if ($Backend -eq 'uipathcli') {
-            Install-UipathcliTool -ToolBase $ToolBase
+            Install-UipathcliTool -ToolBasePath $ToolBasePath
         } else {
             foreach ($target in $Targets) {
                 $cliVer = if ($target -eq 'net6') { $CliVersionNet6 } else { $CliVersionNet8 }
-                Install-CpmfUipsPackCommandLineTool -CliVersion $cliVer -ToolBase $ToolBase
+                $uipcliPath = if ($target -eq 'net6') { $UipcliPathNet6 } else { $UipcliPathNet8 }
+                Install-CpmfUipsPackCommandLineTool -CliVersion $cliVer -UipcliPath $uipcliPath -ToolBasePath $ToolBasePath
             }
         }
     }
@@ -103,7 +116,8 @@ function Invoke-CpmfUipsAnalyze {
         } else {
             $cliVer = $CliVersionNet6  # placeholder; uipathcli exe path is backend-independent
         }
-        $p = Get-CpmfUipsToolPaths -CliVersion $cliVer -ToolBase $ToolBase
+        $uipcliPath = if ($target -eq 'net6') { $UipcliPathNet6 } else { $UipcliPathNet8 }
+        $p = Get-CpmfUipsToolPaths -CliVersion $cliVer -UipcliPath $uipcliPath -ToolBase $ToolBasePath
 
         if (-not $PSCmdlet.ShouldProcess($ProjectJson, "Analyze with $Backend")) { continue }
 

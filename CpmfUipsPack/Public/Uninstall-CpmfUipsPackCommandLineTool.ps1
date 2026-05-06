@@ -7,19 +7,27 @@ function Uninstall-CpmfUipsPackCommandLineTool {
 .PARAMETER CliVersion
     UiPath CLI version to remove. Defaults to 25.10.15.
 
+.PARAMETER UipcliPath
+    Optional absolute path to an existing uipcli.exe. Used to infer tool family and root path.
+
 .PARAMETER ToolBase
     Root directory used during installation. Defaults to %LOCALAPPDATA%\cpmf\tools.
+
+.PARAMETER ToolBasePath
+    Canonical tool root directory. Same as -ToolBase; kept for the shared path-var naming convention.
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [string]$CliVersion = '25.10.15',
-        [string]$ToolBase   = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
+        [string]$UipcliPath,
+        [Alias('ToolBase')]
+        [string]$ToolBasePath = (Join-Path $env:LOCALAPPDATA 'cpmf\tools')
     )
 
     Set-StrictMode -Version Latest
     $ErrorActionPreference = 'Stop'
 
-    $p = Get-CpmfUipsToolPaths -CliVersion $CliVersion -ToolBase $ToolBase
+    $p = Get-CpmfUipsToolPaths -CliVersion $CliVersion -UipcliPath $UipcliPath -ToolBase $ToolBasePath
 
     Write-Verbose "[Uninstall] Removing uipcli $CliVersion ..."
     if (Test-Path $p.CliToolDir) {

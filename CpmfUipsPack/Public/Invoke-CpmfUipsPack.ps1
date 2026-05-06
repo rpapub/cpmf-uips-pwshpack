@@ -30,6 +30,9 @@ function Invoke-CpmfUipsPack {
 
         Invoke-CpmfUipsPack -ProjectJson 'C:\repos\MyProject\project.json'
 
+.PARAMETER Version
+    Print the module version and exit without performing any pack work.
+
 .PARAMETER FeedPath
     Destination directory for the staged .nupkg. Defaults to C:\Users\Public\nugetfeed.
 
@@ -61,6 +64,12 @@ function Invoke-CpmfUipsPack {
 .PARAMETER CliVersionNet8
     UiPath CLI version for the net8 target (25.x dotnet tool). Default: 25.10.11.
 
+.PARAMETER UipcliPathNet6
+    Absolute path to the net6 uipcli.exe. Overrides version-based path inference when supplied.
+
+.PARAMETER UipcliPathNet8
+    Absolute path to the net8 uipcli.exe. Overrides version-based path inference when supplied.
+
 .PARAMETER Targets
     Which CLI versions to build with. Valid values: 'net6', 'net8'.
     Defaults to @('net6'). Use @('net6','net8') to build for both.
@@ -78,13 +87,16 @@ function Invoke-CpmfUipsPack {
     Tool root directory. Forwarded to Install-CpmfUipsPackCommandLineTool. Defaults to
     %LOCALAPPDATA%\cpmf\tools.
 
+.PARAMETER ToolBasePath
+    Canonical tool root directory. Same as -ToolBase; kept for the shared path-var naming convention.
+
 .PARAMETER ConfigFile
     Path to a .psd1 config file that supplies default values for any parameter
     not explicitly passed on the command line. Explicit parameters always win.
 
     Supported keys: FeedPath, UipcliArgs, NoBump, SkipInstall, UseWorktree,
-    WorktreeBase, WorktreeSibling, CliVersionNet6, CliVersionNet8, Targets,
-    MultiTfm, ToolBase.
+    WorktreeBase, WorktreeSibling, CliVersionNet6, CliVersionNet8, UipcliPathNet6,
+    UipcliPathNet8, Targets, MultiTfm, ToolBase, ToolBasePath, Backend.
 
 .OUTPUTS
     [string[]] Full path(s) of the staged .nupkg file(s).
@@ -98,6 +110,7 @@ function Invoke-CpmfUipsPack {
     [OutputType([string[]])]
     param(
         [string]  $ProjectJson     = (Join-Path $PSScriptRoot '..\project.json'),
+        [switch]  $Version,
         [string]  $FeedPath        = 'C:\Users\Public\nugetfeed',
         [string[]]$UipcliArgs      = @(),
         [ValidateSet('uipcli', 'uipathcli')]
@@ -109,15 +122,24 @@ function Invoke-CpmfUipsPack {
         [switch]  $WorktreeSibling,
         [string]  $CliVersionNet6  = '23.10.2.6',
         [string]  $CliVersionNet8  = '25.10.11',
+        [string]  $UipcliPathNet6,
+        [string]  $UipcliPathNet8,
         [string[]]$Targets         = @('net6'),
         [switch]  $MultiTfm,
         [string]  $CliVersion      = '',   # deprecated
-        [string]  $ToolBase        = (Join-Path $env:LOCALAPPDATA 'cpmf\tools'),
+        [Alias('ToolBase')]
+        [string]  $ToolBasePath    = (Join-Path $env:LOCALAPPDATA 'cpmf\tools'),
         [string]  $ConfigFile      = ''
     )
 
     Set-StrictMode -Version Latest
     $ErrorActionPreference = 'Stop'
+
+    if ($Version) {
+        $moduleVersion = (Get-Module CpmfUipsPack).Version
+        Write-Output "CpmfUipsPack $moduleVersion"
+        return
+    }
 
     # Deprecated -CliVersion shim
     if ($PSBoundParameters.ContainsKey('CliVersion') -and $CliVersion -ne '') {
@@ -130,7 +152,7 @@ function Invoke-CpmfUipsPack {
     # Explicit command-line parameters always win over all config sources.
     $cfg = Get-CpmfUipsPackEffectiveConfig -ConfigFile $ConfigFile
 
-    foreach ($key in @('FeedPath', 'WorktreeBase', 'CliVersionNet6', 'CliVersionNet8', 'ToolBase')) {
+    foreach ($key in @('FeedPath', 'WorktreeBase', 'CliVersionNet6', 'CliVersionNet8', 'UipcliPathNet6', 'UipcliPathNet8', 'ToolBasePath', 'Backend')) {
         if (-not $PSBoundParameters.ContainsKey($key) -and $cfg.ContainsKey($key)) {
             Set-Variable -Name $key -Value $cfg[$key]
         }
@@ -167,7 +189,7 @@ function Invoke-CpmfUipsPack {
     Test-CpmfUipsPackPrerequisites `
         -RequireGit:$resolvedUseWorktree `
         -RequireDotnetCli:($Targets -contains 'net8') `
-        -ToolBase $ToolBase
+        -ToolBase $ToolBasePath
 
     $ProjectJson = (Resolve-Path $ProjectJson).Path
     $ProjectRoot = Split-Path $ProjectJson -Parent
@@ -175,11 +197,12 @@ function Invoke-CpmfUipsPack {
     # Pre-install all requested CLI versions before acquiring the lock
     if (-not $SkipInstall) {
         if ($Backend -eq 'uipathcli') {
-            Install-UipathcliTool -ToolBase $ToolBase
+            Install-UipathcliTool -ToolBasePath $ToolBasePath
         } else {
             foreach ($target in $Targets) {
                 $cliVer = if ($target -eq 'net6') { $CliVersionNet6 } else { $CliVersionNet8 }
-                Install-CpmfUipsPackCommandLineTool -CliVersion $cliVer -ToolBase $ToolBase
+                $uipcliPath = if ($target -eq 'net6') { $UipcliPathNet6 } else { $UipcliPathNet8 }
+                Install-CpmfUipsPackCommandLineTool -CliVersion $cliVer -UipcliPath $uipcliPath -ToolBasePath $ToolBasePath
             }
         }
     }
@@ -218,8 +241,10 @@ function Invoke-CpmfUipsPack {
                 -Targets         $Targets `
                 -CliVersionNet6  $CliVersionNet6 `
                 -CliVersionNet8  $CliVersionNet8 `
+                -UipcliPathNet6   $UipcliPathNet6 `
+                -UipcliPathNet8   $UipcliPathNet8 `
                 -MultiTfm:$MultiTfm `
-                -ToolBase        $ToolBase
+                -ToolBasePath    $ToolBasePath
         }
     } else {
         Write-Output (Invoke-MultiTargetPack `
@@ -231,8 +256,10 @@ function Invoke-CpmfUipsPack {
             -Targets         $Targets `
             -CliVersionNet6  $CliVersionNet6 `
             -CliVersionNet8  $CliVersionNet8 `
+            -UipcliPathNet6   $UipcliPathNet6 `
+            -UipcliPathNet8   $UipcliPathNet8 `
             -MultiTfm:$MultiTfm `
-            -ToolBase        $ToolBase)
+            -ToolBasePath    $ToolBasePath)
     }
 
     } # end Invoke-WithFileLock
@@ -254,18 +281,21 @@ function Invoke-MultiTargetPack {
         [string[]] $Targets,
         [string]   $CliVersionNet6,
         [string]   $CliVersionNet8,
+        [string]   $UipcliPathNet6,
+        [string]   $UipcliPathNet8,
         [switch]   $MultiTfm,
-        [string]   $ToolBase
+        [string]   $ToolBasePath
     )
 
     $results        = [System.Collections.Generic.List[string]]::new()
     $isFirstTarget  = $true
     # Computed once — independent of uipcli version
-    $uipathcliExe   = Join-Path $ToolBase 'uipathcli\uipath.exe'
+    $uipathcliExe   = Join-Path $ToolBasePath 'uipathcli\uipath.exe'
 
     foreach ($target in $Targets) {
         $cliVer    = if ($target -eq 'net6') { $CliVersionNet6 } else { $CliVersionNet8 }
-        $p         = Get-CpmfUipsToolPaths -CliVersion $cliVer -ToolBase $ToolBase
+        $uipcliPath = if ($target -eq 'net6') { $UipcliPathNet6 } else { $UipcliPathNet8 }
+        $p         = Get-CpmfUipsToolPaths -CliVersion $cliVer -UipcliPath $uipcliPath -ToolBase $ToolBasePath
         # Use a target tag in the filename only when building multiple targets
         $targetTag = if ($Targets.Count -gt 1) { $target } else { '' }
 

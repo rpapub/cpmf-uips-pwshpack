@@ -30,6 +30,9 @@ Install-Module CpmfUipsPack -Scope CurrentUser
 ```powershell
 # Bump version, pack, copy .nupkg to C:\Users\Public\nugetfeed\
 Invoke-CpmfUipsPack -ProjectJson 'C:\repos\MyProject\project.json'
+
+# Show the module version and exit
+Invoke-CpmfUipsPack -Version
 ```
 
 On first run the module downloads and installs .NET 6.0.36 and uipcli 23.x into
@@ -100,21 +103,23 @@ Invoke-CpmfUipsPack -ProjectJson '...' -Targets net6, net8 -MultiTfm
 
 ## Configuration
 
-Settings come from four sources, merged in priority order. A higher-priority source
+Settings come from five sources, merged in priority order. A higher-priority source
 always wins — you never need to remove a lower-priority setting to override it.
 
 ```
 Priority (lowest → highest)
 ────────────────────────────────────────────────────────────────
  1. User config     %LOCALAPPDATA%\cpmf\CpmfUipsPack\config.psd1
- 2. Env vars        UIPS_*
- 3. Project config  -ConfigFile .\uipath-pack.psd1
- 4. Parameters      -FeedPath, -Targets, ...   ← always win
+ 2. Repo config     .\cpmf-uips.psd1
+ 3. Env vars        CPMF_UIPS_*_PATH, UIPS_* (compatibility)
+ 4. Project config  -ConfigFile .\uipath-pack.psd1
+ 5. Parameters      -FeedPath, -Targets, ...   ← always win
 ────────────────────────────────────────────────────────────────
 ```
 
 This means you can set your personal feed path once in the user config and never
-think about it again, let a CI system inject a different feed via env var, let a
+think about it again, let a CI system inject a different feed or tool path via
+env vars, let the repo ship opinionated defaults in `cpmf-uips.psd1`, let a
 project override the target version in its own config file, and still be able to
 do a one-off override on the command line — all without touching each other.
 
@@ -138,7 +143,23 @@ notepad "$env:LOCALAPPDATA\cpmf\CpmfUipsPack\config.psd1"
 }
 ```
 
-### Layer 2 — Environment variables (CI / wrapper injection)
+### Layer 2 — Repo config (opinionated defaults)
+
+`cpmf-uips.psd1` lives next to the module root and is checked into source control.
+It provides the shared default tool paths used by CI and local runs:
+
+```powershell
+@{
+    Backend        = 'uipcli'
+    FeedPath       = 'C:\Users\Public\nugetfeed'
+    Targets        = @('net6')
+    UipcliPathNet6 = '$env:LOCALAPPDATA\cpmf\tools\uipcli-23.10.9351.15515\extracted\tools\uipcli.exe'
+    UipcliPathNet8 = '$env:LOCALAPPDATA\cpmf\tools\uipcli-25.10.15\uipcli.exe'
+    ToolBasePath   = '$env:LOCALAPPDATA\cpmf\tools'
+}
+```
+
+### Layer 3 — Environment variables (CI / wrapper injection)
 
 Set these in your pipeline or shell profile to inject settings without touching
 any file on disk. A wrapper tool driving this module should prefer env vars over
@@ -146,8 +167,11 @@ building PowerShell parameter plumbing.
 
 | Variable | Parameter | Notes |
 |---|---|---|
-| `UIPS_FEEDPATH` | `-FeedPath` | |
-| `UIPS_TOOLBASE` | `-ToolBase` | |
+| `CPMF_UIPS_UIPCLI_NET6_PATH` | `-UipcliPathNet6` | path to the .NET 6 `uipcli.exe` |
+| `CPMF_UIPS_UIPCLI_NET8_PATH` | `-UipcliPathNet8` | path to the .NET 8 `uipcli.exe` |
+| `CPMF_UIPS_TOOLBASE_PATH` | `-ToolBasePath` | root directory for managed tools |
+| `UIPS_FEEDPATH` | `-FeedPath` | compatibility |
+| `UIPS_TOOLBASE` | `-ToolBasePath` | compatibility |
 | `UIPS_TARGETS` | `-Targets` | comma-separated: `net6,net8` |
 | `UIPS_CLIVERSION_NET6` | `-CliVersionNet6` | |
 | `UIPS_CLIVERSION_NET8` | `-CliVersionNet8` | |
@@ -157,11 +181,11 @@ building PowerShell parameter plumbing.
 
 ```powershell
 # Example: CI pipeline overrides the feed path
-$env:UIPS_FEEDPATH = '\\buildserver\nugetfeed'
+$env:CPMF_UIPS_TOOLBASE_PATH = 'D:\cpmf\tools'
 Invoke-CpmfUipsPack -ProjectJson '...'
 ```
 
-### Layer 3 — Project config (per-project defaults)
+### Layer 4 — Project config (per-project defaults)
 
 Lives alongside `project.json`. Check it into source control so every team member
 and every CI run uses the same defaults for that project.
@@ -185,7 +209,7 @@ Invoke-CpmfUipsPack -ProjectJson '...' -ConfigFile '.\uipath-pack.psd1'
 }
 ```
 
-### Layer 4 — Explicit parameters (one-off overrides)
+### Layer 5 — Explicit parameters (one-off overrides)
 
 Parameters passed directly on the command line always win, regardless of what any
 config layer says.

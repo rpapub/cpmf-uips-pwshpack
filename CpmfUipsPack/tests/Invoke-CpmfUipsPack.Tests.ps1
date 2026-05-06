@@ -129,6 +129,13 @@ Describe 'Invoke-CpmfUipsPack' {
         }
     }
 
+    Context '-Version' {
+        It 'prints the module version and exits' {
+            { Invoke-CpmfUipsPack -Version } | Should -Not -Throw
+            (Invoke-CpmfUipsPack -Version) | Should -BeLike 'CpmfUipsPack *'
+        }
+    }
+
     Context '-UseWorktree' {
         It 'does not modify the original project.json' {
             InModuleScope CpmfUipsPack -Parameters @{ pj = $script:projectJson; feed = $script:tmpFeed } {

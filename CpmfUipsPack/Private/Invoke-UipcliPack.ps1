@@ -3,8 +3,9 @@ function Invoke-UipcliPack {
         [string]  $UipcliExe,
         [string[]]$PackArgs
     )
-    $output = & $UipcliExe @PackArgs 2>&1
-    $exitCode = $LASTEXITCODE
+    $capture = Invoke-NativeCommandCapture -FilePath $UipcliExe -ArgumentList $PackArgs
+    $output = @($capture.StdOutLines) + @($capture.StdErrLines)
+    $exitCode = $capture.ExitCode
 
     if ($exitCode -ne 0) {
         # On failure: only surface actionable lines (errors / failures / exceptions).
@@ -31,11 +32,9 @@ function Invoke-UipcliPack {
             }
         }
     } else {
-        # On success: stdout to Verbose only
+        # On success: stdout/stderr to Verbose only
         foreach ($line in $output) {
-            if ($line -isnot [System.Management.Automation.ErrorRecord]) {
-                Write-Verbose "[uipcli] $line"
-            }
+            Write-Verbose "[uipcli] $line"
         }
     }
 

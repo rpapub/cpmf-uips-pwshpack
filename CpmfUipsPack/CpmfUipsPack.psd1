@@ -1,6 +1,6 @@
 @{
     RootModule        = 'CpmfUipsPack.psm1'
-    ModuleVersion     = '0.3.0'
+    ModuleVersion     = '0.3.1'
     GUID              = '6cc9c20d-f534-483d-851f-a9441b56d4e9'
     Author            = 'Christian Prior-Mamulyan'
     CompanyName       = 'cprima'
@@ -30,7 +30,7 @@
             Tags        = @('UiPath', 'RPA', 'NuGet', 'CI', 'pack', 'cpmf-uips')
             LicenseUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/LICENSE'
             ProjectUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack'
-            ReleaseNotes = '0.3.0 introduces path-first tool resolution via CPMF_UIPS_UIPCLI_NET6_PATH, CPMF_UIPS_UIPCLI_NET8_PATH, and CPMF_UIPS_TOOLBASE_PATH, plus repo-root config defaults. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
+            ReleaseNotes = '0.3.1 fixes native uipcli launch on GitHub Actions by redirecting stdout/stderr through Start-Process, while keeping the path-first CPMF_UIPS_*_PATH contract and repo-root config defaults. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
         }
     }
 }

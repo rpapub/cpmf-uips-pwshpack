@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.3.1] — 2026-05-07
+
+### Fixed
+
+- **Native `uipcli.exe` launch on GitHub Actions** — replaced the direct
+  `& $exe @args 2>&1` invocation path with an explicit redirected process launch
+  so `StandardOutputEncoding` is no longer exercised in the noninteractive runner
+  host. This keeps the wrapper behavior stable locally while making the runner
+  path safe.
+
+---
+
 ## [0.3.0] — 2026-05-06
 
 ### Changed

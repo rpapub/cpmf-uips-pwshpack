@@ -5,6 +5,33 @@ BeforeAll {
     Import-Module (Join-Path $PSScriptRoot '../CpmfUipsPack.psd1') -Force
 }
 
+Describe 'Invoke-NativeCommandCapture' {
+    It 'captures stdout, stderr, and exit code from a native command' {
+        InModuleScope CpmfUipsPack {
+            $tmpRoot = Join-Path ([System.IO.Path]::GetTempPath()) "CpmfUipsNativeTest-$(New-Guid)"
+            $null = New-Item -ItemType Directory -Path $tmpRoot -Force
+            try {
+                $probe = Join-Path $tmpRoot 'probe.ps1'
+                Set-Content -LiteralPath $probe @'
+Write-Output "stdout-one"
+Write-Error "stderr-one"
+exit 7
+'@
+
+                $pwsh = (Get-Command pwsh).Source
+                $capture = Invoke-NativeCommandCapture -FilePath $pwsh -ArgumentList @('-NoProfile', '-File', $probe)
+
+                $capture.ExitCode | Should -Be 7
+                $capture.StdOutLines | Should -Contain 'stdout-one'
+                ($capture.StdErrLines -join "`n") | Should -Match 'stderr-one'
+            }
+            finally {
+                Remove-Item $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
 Describe 'Invoke-PackAndStage' {
 
     BeforeEach {

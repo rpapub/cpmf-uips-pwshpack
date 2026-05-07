@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.3.2] — 2026-05-07
+
+### Fixed
+
+- **Native `uipcli.exe` launcher in the runner path** — removed the extra
+  `-NoNewWindow` constraint from the redirected native capture helper. The
+  launch path remains process-based and output-capturing, but the runner can
+  now start the CLI executable without the Win32 application failure seen in
+  the remote pack job.
+
+---
+
 ## [0.3.1] — 2026-05-07
 
 ### Fixed

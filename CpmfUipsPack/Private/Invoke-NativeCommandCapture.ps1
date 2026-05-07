@@ -19,7 +19,6 @@ function Invoke-NativeCommandCapture {
             -FilePath $FilePath `
             -ArgumentList $ArgumentList `
             -WorkingDirectory $WorkingDirectory `
-            -NoNewWindow `
             -PassThru `
             -RedirectStandardOutput $stdoutPath `
             -RedirectStandardError $stderrPath

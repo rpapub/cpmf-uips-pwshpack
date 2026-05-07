@@ -1,6 +1,6 @@
 @{
     RootModule        = 'CpmfUipsPack.psm1'
-    ModuleVersion     = '0.3.1'
+    ModuleVersion     = '0.3.2'
     GUID              = '6cc9c20d-f534-483d-851f-a9441b56d4e9'
     Author            = 'Christian Prior-Mamulyan'
     CompanyName       = 'cprima'

@@ -1,6 +1,6 @@
 @{
     RootModule        = 'CpmfUipsPack.psm1'
-    ModuleVersion     = '0.3.3'
+    ModuleVersion     = '0.3.4'
     GUID              = '6cc9c20d-f534-483d-851f-a9441b56d4e9'
     Author            = 'Christian Prior-Mamulyan'
     CompanyName       = 'cprima'
@@ -30,7 +30,7 @@
             Tags        = @('UiPath', 'RPA', 'NuGet', 'CI', 'pack', 'cpmf-uips')
             LicenseUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/LICENSE'
             ProjectUri  = 'https://github.com/rpapub/cpmf-uips-pwshpack'
-            ReleaseNotes = '0.3.3 fixes native uipcli launch on GitHub Actions by using a no-window ProcessStartInfo capture path, while keeping the path-first CPMF_UIPS_*_PATH contract and repo-root config defaults. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
+            ReleaseNotes = '0.3.4 adds first-class OutputPath support, keeps the path-first CPMF_UIPS_*_PATH contract, and fixes native uipcli launch on GitHub Actions by using a no-window ProcessStartInfo capture path. Full changelog: https://github.com/rpapub/cpmf-uips-pwshpack/blob/main/CHANGELOG.md'
         }
     }
 }

@@ -27,6 +27,13 @@ Describe 'Install-CpmfUipsPackCommandLineTool' {
                 $null = New-Item -ItemType Directory -Path (Split-Path $p.UipcliExe)    -Force
                 $null = New-Item -ItemType File      -Path $p.UipcliExe                 -Force
 
+                Mock Invoke-NativeCommandCapture {
+                    [pscustomobject]@{
+                        ExitCode    = 0
+                        StdOutLines = @('UiPath CLI')
+                        StdErrLines = @()
+                    }
+                }
                 Mock Invoke-WebRequest { throw 'Should not be called' }
 
                 { Install-CpmfUipsPackCommandLineTool -CliVersion $cv -ToolBase $tb } | Should -Not -Throw
@@ -76,6 +83,13 @@ Describe 'Install-CpmfUipsPackCommandLineTool' {
                 $null = New-Item -ItemType Directory -Path (Split-Path $p.UipcliExe)    -Force
                 $null = New-Item -ItemType File      -Path $p.UipcliExe                 -Force
 
+                Mock Invoke-NativeCommandCapture {
+                    [pscustomobject]@{
+                        ExitCode    = 0
+                        StdOutLines = @('UiPath CLI')
+                        StdErrLines = @()
+                    }
+                }
                 Mock Invoke-WebRequest { throw 'Should not be called' }
 
                 { Install-CpmfUipsPackCommandLineTool -CliVersion $cv -ToolBase $tb } | Should -Not -Throw

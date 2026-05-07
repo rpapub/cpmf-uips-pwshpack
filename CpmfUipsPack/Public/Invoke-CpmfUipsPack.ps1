@@ -36,6 +36,11 @@ function Invoke-CpmfUipsPack {
 .PARAMETER FeedPath
     Destination directory for the staged .nupkg. Defaults to C:\Users\Public\nugetfeed.
 
+.PARAMETER OutputPath
+    Base directory for the native uipcli pack output. The module creates a unique
+    subdirectory beneath this root for each pack run. Defaults to
+    C:\Users\Public\UiPath.CLI.Windows\pack-output.
+
 .PARAMETER UipcliArgs
     Additional arguments passed verbatim to uipcli, e.g.
     -UipcliArgs '--traceLevel','Verbose','--outputType','Tests'
@@ -94,7 +99,7 @@ function Invoke-CpmfUipsPack {
     Path to a .psd1 config file that supplies default values for any parameter
     not explicitly passed on the command line. Explicit parameters always win.
 
-    Supported keys: FeedPath, UipcliArgs, NoBump, SkipInstall, UseWorktree,
+    Supported keys: FeedPath, OutputPath, UipcliArgs, NoBump, SkipInstall, UseWorktree,
     WorktreeBase, WorktreeSibling, CliVersionNet6, CliVersionNet8, UipcliPathNet6,
     UipcliPathNet8, Targets, MultiTfm, ToolBase, ToolBasePath, Backend.
 
@@ -112,6 +117,7 @@ function Invoke-CpmfUipsPack {
         [string]  $ProjectJson     = (Join-Path $PSScriptRoot '..\project.json'),
         [switch]  $Version,
         [string]  $FeedPath        = 'C:\Users\Public\nugetfeed',
+        [string]  $OutputPath      = '',
         [string[]]$UipcliArgs      = @(),
         [ValidateSet('uipcli', 'uipathcli')]
         [string]  $Backend         = 'uipcli',
@@ -152,7 +158,7 @@ function Invoke-CpmfUipsPack {
     # Explicit command-line parameters always win over all config sources.
     $cfg = Get-CpmfUipsPackEffectiveConfig -ConfigFile $ConfigFile
 
-    foreach ($key in @('FeedPath', 'WorktreeBase', 'CliVersionNet6', 'CliVersionNet8', 'UipcliPathNet6', 'UipcliPathNet8', 'ToolBasePath', 'Backend')) {
+    foreach ($key in @('FeedPath', 'OutputPath', 'WorktreeBase', 'CliVersionNet6', 'CliVersionNet8', 'UipcliPathNet6', 'UipcliPathNet8', 'ToolBasePath', 'Backend')) {
         if (-not $PSBoundParameters.ContainsKey($key) -and $cfg.ContainsKey($key)) {
             Set-Variable -Name $key -Value $cfg[$key]
         }
@@ -181,6 +187,14 @@ function Invoke-CpmfUipsPack {
     foreach ($t in $Targets) {
         if ($t -notin $validTargets) {
             throw "-Targets contains invalid value '$t'. Valid values: net6, net8"
+        }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+        $OutputPath = if ($env:PUBLIC) {
+            Join-Path $env:PUBLIC 'UiPath.CLI.Windows\pack-output'
+        } else {
+            Join-Path ([System.IO.Path]::GetTempPath()) 'UiPath.CLI.Windows\pack-output'
         }
     }
 
@@ -244,7 +258,8 @@ function Invoke-CpmfUipsPack {
                 -UipcliPathNet6   $UipcliPathNet6 `
                 -UipcliPathNet8   $UipcliPathNet8 `
                 -MultiTfm:$MultiTfm `
-                -ToolBasePath    $ToolBasePath
+                -ToolBasePath    $ToolBasePath `
+                -OutputPath      $OutputPath
         }
     } else {
         Write-Output (Invoke-MultiTargetPack `
@@ -259,7 +274,8 @@ function Invoke-CpmfUipsPack {
             -UipcliPathNet6   $UipcliPathNet6 `
             -UipcliPathNet8   $UipcliPathNet8 `
             -MultiTfm:$MultiTfm `
-            -ToolBasePath    $ToolBasePath)
+            -ToolBasePath    $ToolBasePath `
+            -OutputPath      $OutputPath)
     }
 
     } # end Invoke-WithFileLock
@@ -284,7 +300,8 @@ function Invoke-MultiTargetPack {
         [string]   $UipcliPathNet6,
         [string]   $UipcliPathNet8,
         [switch]   $MultiTfm,
-        [string]   $ToolBasePath
+        [string]   $ToolBasePath,
+        [string]   $OutputPath
     )
 
     $results        = [System.Collections.Generic.List[string]]::new()
@@ -310,7 +327,8 @@ function Invoke-MultiTargetPack {
             -NoBump:$thisBump `
             -UipcliExe      $p.UipcliExe `
             -UipathcliExe   $uipathcliExe `
-            -TargetTag      $targetTag
+            -TargetTag      $targetTag `
+            -OutputPath     $OutputPath
 
         if ($staged) { $results.Add($staged) }
         $isFirstTarget = $false
@@ -362,7 +380,8 @@ function Invoke-PackAndStage {
         [switch]  $NoBump,
         [string]  $UipcliExe,
         [string]  $UipathcliExe  = '',
-        [string]  $TargetTag     = ''
+        [string]  $TargetTag     = '',
+        [string]  $OutputPath
     )
 
     # Version bump (capture current for rollback)
@@ -377,7 +396,15 @@ function Invoke-PackAndStage {
         Write-Verbose "[Publish] Version bump skipped (-NoBump). Current: $previousVersion"
     }
 
-    $TempOutputDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
+    if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+        $OutputPath = if ($env:PUBLIC) {
+            Join-Path $env:PUBLIC 'UiPath.CLI.Windows\pack-output'
+        } else {
+            [System.IO.Path]::GetTempPath()
+        }
+    }
+
+    $TempOutputDir = Join-Path $OutputPath ([System.Guid]::NewGuid().ToString())
     try {
         $null = New-Item -ItemType Directory -Path $TempOutputDir -Force
 

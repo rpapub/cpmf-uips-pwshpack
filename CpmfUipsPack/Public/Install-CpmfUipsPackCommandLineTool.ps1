@@ -38,6 +38,25 @@ function Install-CpmfUipsPackCommandLineTool {
 
     $p = Get-CpmfUipsToolPaths -CliVersion $CliVersion -UipcliPath $UipcliPath -ToolBase $ToolBasePath
 
+    function Test-UipcliExecutable {
+        param(
+            [Parameter(Mandatory)]
+            [string]$Path
+        )
+
+        if (-not (Test-Path -LiteralPath $Path)) {
+            return $false
+        }
+
+        try {
+            $capture = Invoke-NativeCommandCapture -FilePath $Path -ArgumentList @('--version')
+            return ($capture.ExitCode -eq 0)
+        } catch {
+            Write-Verbose "[Install] Existing uipcli at $Path failed probe: $($_.Exception.Message)"
+            return $false
+        }
+    }
+
     if (-not $p.IsDotnetTool) {
         # ── Classic path: .NET 6.0.36 (base + WindowsDesktop) + nupkg extraction ──
 
@@ -95,9 +114,12 @@ function Install-CpmfUipsPackCommandLineTool {
         # ── Step 1a: uipcli 23.x — nupkg download + ZipFile extraction ──
         Write-Verbose "[Install] Checking uipcli $CliVersion in $($p.CliToolDir)"
 
-        if (Test-Path $p.UipcliExe) {
-            Write-Verbose "[Install] uipcli $CliVersion already installed — skipping"
+        if (Test-UipcliExecutable -Path $p.UipcliExe) {
+            Write-Verbose "[Install] uipcli $CliVersion already installed and runnable — skipping"
             return
+        } elseif (Test-Path -LiteralPath $p.CliToolDir) {
+            Write-Verbose "[Install] Existing uipcli $CliVersion is not runnable — reinstalling"
+            Remove-Item $p.CliToolDir -Recurse -Force -ErrorAction SilentlyContinue
         }
 
         if (-not $PSCmdlet.ShouldProcess($p.CliToolDir, "Download and extract uipcli $CliVersion")) { return }

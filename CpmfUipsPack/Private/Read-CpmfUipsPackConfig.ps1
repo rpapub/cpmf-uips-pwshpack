@@ -25,7 +25,7 @@ function Read-CpmfUipsPackConfig {
     $cfg = Import-PowerShellDataFile -LiteralPath $Path
 
     $knownKeys = @(
-        'FeedPath', 'UipcliArgs', 'NoBump', 'SkipInstall',
+        'FeedPath', 'OutputPath', 'UipcliArgs', 'NoBump', 'SkipInstall',
         'UseWorktree', 'WorktreeBase', 'WorktreeSibling',
         'CliVersionNet6', 'CliVersionNet8', 'Targets', 'MultiTfm',
         'ToolBase',

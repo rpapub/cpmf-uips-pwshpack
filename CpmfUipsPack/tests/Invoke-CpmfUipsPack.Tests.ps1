@@ -48,32 +48,26 @@ Describe 'Invoke-PackAndStage' {
     }
 
     Context 'Successful pack' {
-        It 'bumps version, returns staged nupkg path, prunes to 3 files' {
+        It 'bumps version, returns staged nupkg path, and uses the configured output root' {
             InModuleScope CpmfUipsPack -Parameters @{ pj = $script:projectJson; feed = $script:tmpFeed } {
                 param($pj, $feed)
-                $outDir = Join-Path (Split-Path $pj) '.pack-output'
-                $null = New-Item -ItemType Directory -Path $outDir -Force
-
-                # Pre-populate 3 old nupkgs
-                1..3 | ForEach-Object {
-                    $f = Join-Path $outDir "Old.$_.nupkg"
-                    New-Item -ItemType File -Path $f -Force | Out-Null
-                    (Get-Item $f).LastWriteTime = (Get-Date).AddDays(-$_)
-                }
-
+                $outputBase = Join-Path ([System.IO.Path]::GetTempPath()) "CpmfUipsOutput-$(New-Guid)"
+                $script:capturedOutputDir = $null
                 Mock Invoke-UipcliPack {
                     param($UipcliExe, $PackArgs)
                     $outDir = $PackArgs[$PackArgs.IndexOf('-o') + 1]
+                    $script:capturedOutputDir = $outDir
+                    ($outDir.StartsWith($outputBase)) | Should -BeTrue
                     New-Item -ItemType File -Path (Join-Path $outDir 'TestProject.1.1.0.nupkg') -Force | Out-Null
                     return 0
                 }
 
-                $result = Invoke-PackAndStage -ProjectJson $pj -FeedPath $feed -UipcliArgs @() -UipcliExe 'fake.exe'
+                $result = Invoke-PackAndStage -ProjectJson $pj -FeedPath $feed -OutputPath $outputBase -UipcliArgs @() -UipcliExe 'fake.exe'
 
                 $result           | Should -BeLike '*.nupkg'
                 Test-Path $result | Should -Be $true
                 (Get-Content $pj -Raw) | Should -Match '"projectVersion":\s*"1\.1\.0"'
-                (Get-ChildItem $outDir -Filter '*.nupkg').Count | Should -Be 3
+                $script:capturedOutputDir | Should -Not -BeNullOrEmpty
             }
         }
     }
@@ -84,7 +78,7 @@ Describe 'Invoke-PackAndStage' {
                 param($pj, $feed)
                 Mock Invoke-UipcliPack { return 1 }
 
-                { Invoke-PackAndStage -ProjectJson $pj -FeedPath $feed -UipcliArgs @() -UipcliExe 'fake.exe' } |
+                { Invoke-PackAndStage -ProjectJson $pj -FeedPath $feed -OutputPath (Join-Path ([System.IO.Path]::GetTempPath()) "CpmfUipsOutput-$(New-Guid)") -UipcliArgs @() -UipcliExe 'fake.exe' } |
                     Should -Throw '*uipcli pack failed*'
 
                 (Get-Content $pj -Raw) | Should -Match '"projectVersion":\s*"1\.0\.0"'
@@ -103,7 +97,7 @@ Describe 'Invoke-PackAndStage' {
                     return 0
                 }
 
-                Invoke-PackAndStage -ProjectJson $pj -FeedPath $feed -UipcliArgs @() -NoBump -UipcliExe 'fake.exe' | Out-Null
+                Invoke-PackAndStage -ProjectJson $pj -FeedPath $feed -OutputPath (Join-Path ([System.IO.Path]::GetTempPath()) "CpmfUipsOutput-$(New-Guid)") -UipcliArgs @() -NoBump -UipcliExe 'fake.exe' | Out-Null
                 (Get-Content $pj -Raw) | Should -Match '"projectVersion":\s*"1\.0\.0"'
             }
         }
@@ -132,7 +126,10 @@ Describe 'Invoke-CpmfUipsPack' {
                 Mock Install-CpmfUipsPackCommandLineTool { }
                 Mock Get-CpmfUipsToolPaths { @{ UipcliExe = 'fake.exe'; DotnetDir = 'C:\fake' } }
                 Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
-                Mock Invoke-PackAndStage { 'C:\feed\fake.nupkg' }
+                Mock Invoke-PackAndStage {
+                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $OutputPath)
+                    'C:\Users\Public\UiPath.CLI.Windows\pack-output\fake.nupkg'
+                }
 
                 Invoke-CpmfUipsPack -ProjectJson $pj -FeedPath $feed
                 Should -Invoke Install-CpmfUipsPackCommandLineTool -Times 1
@@ -148,10 +145,13 @@ Describe 'Invoke-CpmfUipsPack' {
                 Mock Install-CpmfUipsPackCommandLineTool { }
                 Mock Get-CpmfUipsToolPaths { @{ UipcliExe = 'fake.exe'; DotnetDir = 'C:\fake' } }
                 Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
-                Mock Invoke-PackAndStage { 'C:\feed\Test.1.1.0.nupkg' }
+                Mock Invoke-PackAndStage {
+                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $OutputPath)
+                    'C:\Users\Public\UiPath.CLI.Windows\pack-output\Test.1.1.0.nupkg'
+                }
 
                 $result = Invoke-CpmfUipsPack -ProjectJson $pj -FeedPath $feed -SkipInstall
-                $result | Should -Be 'C:\feed\Test.1.1.0.nupkg'
+                $result | Should -Be 'C:\Users\Public\UiPath.CLI.Windows\pack-output\Test.1.1.0.nupkg'
             }
         }
     }
@@ -172,7 +172,10 @@ Describe 'Invoke-CpmfUipsPack' {
                 Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
                 Mock Get-GitWorktreePath { Join-Path ([System.IO.Path]::GetTempPath()) "wt-test-$(New-Guid)" }
                 Mock Invoke-GitWorktree { param($RepoRoot, $WorktreePath, $ScriptBlock); & $ScriptBlock $WorktreePath }
-                Mock Invoke-PackAndStage { 'C:\feed\fake.nupkg' }
+                Mock Invoke-PackAndStage {
+                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $OutputPath)
+                    'C:\Users\Public\UiPath.CLI.Windows\pack-output\fake.nupkg'
+                }
                 Mock -CommandName 'git' -MockWith { 'C:\repos\MyProject'; $global:LASTEXITCODE = 0 }
 
                 $originalContent = Get-Content $pj -Raw
@@ -227,9 +230,9 @@ Describe 'Invoke-CpmfUipsPack' {
                 Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
                 $script:capturedFeed = $null
                 Mock Invoke-PackAndStage {
-                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe)
+                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $OutputPath)
                     $script:capturedFeed = $FeedPath
-                    'C:\feed\fake.nupkg'
+                    'C:\Users\Public\UiPath.CLI.Windows\pack-output\fake.nupkg'
                 }
 
                 Invoke-CpmfUipsPack -ProjectJson $pj -ConfigFile $cfgPath -SkipInstall | Out-Null
@@ -239,20 +242,44 @@ Describe 'Invoke-CpmfUipsPack' {
             }
         }
 
+        It 'applies OutputPath from config when not supplied explicitly' {
+            InModuleScope CpmfUipsPack -Parameters @{ pj = $script:projectJson; feed = $script:tmpFeed } {
+                param($pj, $feed)
+                $cfgPath = [System.IO.Path]::GetTempFileName() -replace '\.tmp$', '.psd1'
+                $outputBase = Join-Path ([System.IO.Path]::GetTempPath()) "CpmfUipsOutput-$(New-Guid)"
+                Set-Content $cfgPath "@{ OutputPath = '$outputBase' }"
+
+                Mock Install-CpmfUipsPackCommandLineTool { }
+                Mock Get-CpmfUipsToolPaths { @{ UipcliExe = 'fake.exe'; DotnetDir = 'C:\fake' } }
+                Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
+                $script:capturedOutputDir = $null
+                Mock Invoke-PackAndStage {
+                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $TargetTag, $OutputPath)
+                    $script:capturedOutputDir = $OutputPath
+                    'C:\Users\Public\UiPath.CLI.Windows\pack-output\fake.nupkg'
+                }
+
+                Invoke-CpmfUipsPack -ProjectJson $pj -FeedPath $feed -ConfigFile $cfgPath -SkipInstall | Out-Null
+                $script:capturedOutputDir | Should -Be $outputBase
+
+                Remove-Item $cfgPath -Force -ErrorAction SilentlyContinue
+            }
+        }
+
         It 'explicit parameter overrides config value' {
             InModuleScope CpmfUipsPack -Parameters @{ pj = $script:projectJson; feed = $script:tmpFeed } {
                 param($pj, $feed)
                 $cfgPath = [System.IO.Path]::GetTempFileName() -replace '\.tmp$', '.psd1'
-                Set-Content $cfgPath "@{ FeedPath = 'C:\should-not-be-used' }"
+                Set-Content $cfgPath "@{ FeedPath = 'C:\Users\Public\UiPath.CLI.Windows\should-not-be-used' }"
 
                 Mock Install-CpmfUipsPackCommandLineTool { }
                 Mock Get-CpmfUipsToolPaths { @{ UipcliExe = 'fake.exe'; DotnetDir = 'C:\fake' } }
                 Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
                 $script:capturedFeed = $null
                 Mock Invoke-PackAndStage {
-                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe)
+                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $OutputPath)
                     $script:capturedFeed = $FeedPath
-                    'C:\feed\fake.nupkg'
+                    'C:\Users\Public\UiPath.CLI.Windows\pack-output\fake.nupkg'
                 }
 
                 Invoke-CpmfUipsPack -ProjectJson $pj -FeedPath $feed -ConfigFile $cfgPath -SkipInstall | Out-Null

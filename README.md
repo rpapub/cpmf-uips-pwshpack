@@ -152,6 +152,7 @@ It provides the shared default tool paths used by CI and local runs:
 @{
     Backend        = 'uipcli'
     FeedPath       = 'C:\Users\Public\nugetfeed'
+    OutputPath     = 'C:\Users\Public\UiPath.CLI.Windows\pack-output'
     Targets        = @('net6')
     UipcliPathNet6 = '$env:LOCALAPPDATA\cpmf\tools\uipcli-23.10.9351.15515\extracted\tools\uipcli.exe'
     UipcliPathNet8 = '$env:LOCALAPPDATA\cpmf\tools\uipcli-25.10.15\uipcli.exe'
@@ -170,6 +171,7 @@ building PowerShell parameter plumbing.
 | `CPMF_UIPS_UIPCLI_NET6_PATH` | `-UipcliPathNet6` | path to the .NET 6 `uipcli.exe` |
 | `CPMF_UIPS_UIPCLI_NET8_PATH` | `-UipcliPathNet8` | path to the .NET 8 `uipcli.exe` |
 | `CPMF_UIPS_TOOLBASE_PATH` | `-ToolBasePath` | root directory for managed tools |
+| `CPMF_UIPS_OUTPUT_PATH` | `-OutputPath` | base directory for native `uipcli` output |
 | `UIPS_FEEDPATH` | `-FeedPath` | compatibility |
 | `UIPS_TOOLBASE` | `-ToolBasePath` | compatibility |
 | `UIPS_TARGETS` | `-Targets` | comma-separated: `net6,net8` |

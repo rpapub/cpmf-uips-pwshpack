@@ -52,6 +52,13 @@ Describe 'Install-CpmfUipsPackCommandLineTool — version family routing' {
                 $null = New-Item -ItemType File      -Path $p.DotnetMarker              -Force
                 $null = New-Item -ItemType Directory -Path (Split-Path $p.UipcliExe)    -Force
                 $null = New-Item -ItemType File      -Path $p.UipcliExe                 -Force
+                Mock Invoke-NativeCommandCapture {
+                    [pscustomobject]@{
+                        ExitCode    = 0
+                        StdOutLines = @('UiPath CLI')
+                        StdErrLines = @()
+                    }
+                }
                 Mock Invoke-WebRequest { throw 'Should not be called' }
                 { Install-CpmfUipsPackCommandLineTool -CliVersion '23.10.2.6' -ToolBase $tb } | Should -Not -Throw
                 Should -Invoke Invoke-WebRequest -Times 0
@@ -69,6 +76,13 @@ Describe 'Install-CpmfUipsPackCommandLineTool — version family routing' {
                 # Create dotnet.exe stub so prerequisite check passes
                 $null = New-Item -ItemType Directory -Path $p.DotnetDir -Force
                 $null = New-Item -ItemType File      -Path (Join-Path $p.DotnetDir 'dotnet.exe') -Force
+                Mock Invoke-NativeCommandCapture {
+                    [pscustomobject]@{
+                        ExitCode    = 0
+                        StdOutLines = @('UiPath CLI')
+                        StdErrLines = @()
+                    }
+                }
                 Mock Invoke-WebRequest { throw 'Should not be called' }
                 { Install-CpmfUipsPackCommandLineTool -CliVersion '25.10.11' -ToolBase $tb } | Should -Not -Throw
                 Should -Invoke Invoke-WebRequest -Times 0
@@ -99,7 +113,7 @@ Describe 'Invoke-CpmfUipsPack — multi-target' {
                 Mock Install-CpmfUipsPackCommandLineTool { }
                 Mock Get-CpmfUipsToolPaths { @{ UipcliExe = 'fake.exe' } }
                 Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
-                Mock Invoke-PackAndStage { 'C:\feed\TestProject.1.1.0.nupkg' }
+                Mock Invoke-PackAndStage { 'C:\Users\Public\UiPath.CLI.Windows\pack-output\TestProject.1.1.0.nupkg' }
 
                 $result = @(Invoke-CpmfUipsPack -ProjectJson $pj -FeedPath $feed -Targets net6 -SkipInstall)
                 $result.Count | Should -Be 1
@@ -118,8 +132,9 @@ Describe 'Invoke-CpmfUipsPack — multi-target' {
                 Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
                 $script:callCount = 0
                 Mock Invoke-PackAndStage {
+                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $TargetTag, $OutputPath)
                     $script:callCount++
-                    "C:\feed\TestProject.1.1.0.net$script:callCount.nupkg"
+                    "C:\Users\Public\UiPath.CLI.Windows\pack-output\TestProject.1.1.0.net$script:callCount.nupkg"
                 }
 
                 $result = Invoke-CpmfUipsPack -ProjectJson $pj -FeedPath $feed -Targets net6,net8 -SkipInstall
@@ -136,9 +151,9 @@ Describe 'Invoke-CpmfUipsPack — multi-target' {
                 Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
                 $script:noBumpValues = @()
                 Mock Invoke-PackAndStage {
-                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $TargetTag)
+                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $TargetTag, $OutputPath)
                     $script:noBumpValues += $NoBump.IsPresent
-                    "C:\feed\fake.$TargetTag.nupkg"
+                    "C:\Users\Public\UiPath.CLI.Windows\pack-output\fake.$TargetTag.nupkg"
                 }
 
                 Invoke-CpmfUipsPack -ProjectJson $pj -FeedPath $feed -Targets net6,net8 -SkipInstall | Out-Null
@@ -154,15 +169,15 @@ Describe 'Invoke-CpmfUipsPack — multi-target' {
                 Mock Get-CpmfUipsToolPaths { @{ UipcliExe = 'fake.exe' } }
                 Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
                 Mock Invoke-PackAndStage {
-                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $TargetTag)
-                    "C:\feed\TestProject.1.1.0.$TargetTag.nupkg"
+                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $TargetTag, $OutputPath)
+                    "C:\Users\Public\UiPath.CLI.Windows\pack-output\TestProject.1.1.0.$TargetTag.nupkg"
                 }
-                Mock Invoke-MultiTfmMerge { 'C:\feed\TestProject.1.1.0.nupkg' }
+                Mock Invoke-MultiTfmMerge { 'C:\Users\Public\UiPath.CLI.Windows\pack-output\TestProject.1.1.0.nupkg' }
 
                 $result = @(Invoke-CpmfUipsPack -ProjectJson $pj -FeedPath $feed -Targets net6,net8 -MultiTfm -SkipInstall)
                 Should -Invoke Invoke-MultiTfmMerge -Times 1
                 $result.Count | Should -Be 1
-                $result[0]    | Should -Be 'C:\feed\TestProject.1.1.0.nupkg'
+                $result[0]    | Should -Be 'C:\Users\Public\UiPath.CLI.Windows\pack-output\TestProject.1.1.0.nupkg'
             }
         }
     }
@@ -174,7 +189,10 @@ Describe 'Invoke-CpmfUipsPack — multi-target' {
                 Mock Install-CpmfUipsPackCommandLineTool { }
                 Mock Get-CpmfUipsToolPaths { @{ UipcliExe = 'fake.exe' } }
                 Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
-                Mock Invoke-PackAndStage { 'C:\feed\fake.nupkg' }
+                Mock Invoke-PackAndStage {
+                    param($ProjectJson, $FeedPath, $UipcliArgs, $NoBump, $UipcliExe, $TargetTag, $OutputPath)
+                    'C:\Users\Public\UiPath.CLI.Windows\pack-output\fake.nupkg'
+                }
 
                 { Invoke-CpmfUipsPack -ProjectJson $pj -FeedPath $feed -CliVersion '23.10.2.6' -SkipInstall } |
                     Should -Not -Throw

@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.3.3] — 2026-05-07
+
+### Fixed
+
+- **Native `uipcli.exe` launcher in the runner path** — replaced the
+  `Start-Process`-based capture helper with a no-window `ProcessStartInfo`
+  launcher that redirects stdout and stderr explicitly, avoiding the visible
+  console window on the self-hosted runner while preserving captured output.
+
+---
+
 ## [0.3.2] — 2026-05-07
 
 ### Fixed

@@ -67,13 +67,17 @@ jobs:
           $fragment | Set-Content ./CHANGELOG_fragment.md
           Write-Host "Extracted $($fragment.Count) lines for $version"
 
-      - name: Create GitHub Release
+      - name: Ensure GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ github.ref_name }} `
-            --title "CpmfUipsPack ${{ github.ref_name }}" `
-            --notes-file CHANGELOG_fragment.md
+          $tag = '${{ github.ref_name }}'
+          $title = "CpmfUipsPack $tag"
+          if (gh release view $tag *> $null) {
+            gh release edit $tag --title $title --notes-file CHANGELOG_fragment.md
+          } else {
+            gh release create $tag --title $title --notes-file CHANGELOG_fragment.md
+          }
 
       - name: Publish to PSGallery
         shell: pwsh

@@ -156,10 +156,28 @@ Describe 'Invoke-CpmfUipsPack' {
         }
     }
 
-    Context '-Version' {
+    Context '-ShowVersion' {
         It 'prints the module version and exits' {
-            { Invoke-CpmfUipsPack -Version } | Should -Not -Throw
-            (Invoke-CpmfUipsPack -Version) | Should -BeLike 'CpmfUipsPack *'
+            { Invoke-CpmfUipsPack -ShowVersion } | Should -Not -Throw
+            (Invoke-CpmfUipsPack -ShowVersion) | Should -BeLike 'CpmfUipsPack *'
+        }
+    }
+
+    Context '-ProjectVersion' {
+        It 'writes the supplied version to project.json' {
+            InModuleScope CpmfUipsPack -Parameters @{ pj = $script:projectJson; feed = $script:tmpFeed } {
+                param($pj, $feed)
+                Mock Install-CpmfUipsPackCommandLineTool { }
+                Mock Get-CpmfUipsToolPaths { @{ UipcliExe = 'fake.exe'; DotnetDir = 'C:\fake' } }
+                Mock Invoke-WithFileLock { param($LockFile, $ScriptBlock); & $ScriptBlock }
+                Mock Invoke-PackAndStage {
+                    param($ProjectJson, $FeedPath, $ProjectVersion)
+                    "C:\feed\TestProject.$ProjectVersion.nupkg"
+                }
+
+                $result = Invoke-CpmfUipsPack -ProjectJson $pj -FeedPath $feed -ProjectVersion '5.0.0' -SkipInstall
+                $result | Should -BeLike '*5.0.0*'
+            }
         }
     }
 

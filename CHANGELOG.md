@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.3.5] — 2026-05-14
+
+### Changed
+
+- **`Invoke-CpmfUipsPack`** — `-Version` switch renamed to `-ShowVersion` to free the
+  name for a string-typed override parameter. Callers using `-Version` must update to `-ShowVersion`.
+
+### Added
+
+- **`-ProjectVersion [string]`** on `Update-CpmfUipsPackProjectVersion` and
+  `Invoke-CpmfUipsPack` — writes an explicit version string to `project.json` instead
+  of computing an auto-bump. Useful in CI pipelines that derive the version from a git
+  tag (e.g. `GITHUB_REF_NAME`). On pack failure the original version is restored.
+
+---
+
 ## [0.3.4] — 2026-05-07
 
 ### Fixed

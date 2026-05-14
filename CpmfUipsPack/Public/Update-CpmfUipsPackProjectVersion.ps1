@@ -19,6 +19,10 @@ function Update-CpmfUipsPackProjectVersion {
 .PARAMETER NoBump
     Return the current version without writing any changes.
 
+.PARAMETER ProjectVersion
+    Write this exact version string to project.json instead of computing an auto-bump.
+    Mutually exclusive with -NoBump.
+
 .OUTPUTS
     [string] The new (or current, if -NoBump) version string.
 #>
@@ -28,7 +32,9 @@ function Update-CpmfUipsPackProjectVersion {
         [Parameter(Mandatory)]
         [string]$ProjectJson,
 
-        [switch]$NoBump
+        [switch]$NoBump,
+
+        [string]$ProjectVersion
     )
 
     Set-StrictMode -Version Latest
@@ -47,7 +53,9 @@ function Update-CpmfUipsPackProjectVersion {
         return
     }
 
-    $newVersion = if ($current -match '^(\d+\.\d+\.\d+)-(.+)$') {
+    $newVersion = if ($PSBoundParameters.ContainsKey('ProjectVersion') -and $ProjectVersion -ne '') {
+        $ProjectVersion
+    } elseif ($current -match '^(\d+\.\d+\.\d+)-(.+)$') {
         $base = $Matches[1]; $pre = $Matches[2]
         $bumped = if ($pre -match '^(.+\.)(\d+)$') { "$($Matches[1])$([int]$Matches[2] + 1)" } else { "$pre.1" }
         "$base-$bumped"

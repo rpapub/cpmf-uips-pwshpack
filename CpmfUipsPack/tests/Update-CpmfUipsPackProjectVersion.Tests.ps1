@@ -81,6 +81,28 @@ Describe 'Update-CpmfUipsPackProjectVersion' {
         }
     }
 
+    Context '-ProjectVersion explicit' {
+        It 'writes the supplied version verbatim' {
+            Set-Content $script:tmpFile '{"projectVersion": "1.0.0"}'
+            $result = Update-CpmfUipsPackProjectVersion -ProjectJson $script:tmpFile -ProjectVersion '2.1.0'
+            $result | Should -Be '2.1.0'
+            (Get-Content $script:tmpFile -Raw) | Should -Match '"projectVersion":\s*"2\.1\.0"'
+        }
+
+        It 'returns the supplied version' {
+            Set-Content $script:tmpFile '{"projectVersion": "1.0.0"}'
+            Update-CpmfUipsPackProjectVersion -ProjectJson $script:tmpFile -ProjectVersion '3.0.0-rc.1' |
+                Should -Be '3.0.0-rc.1'
+        }
+
+        It 'does not modify file when -WhatIf is set' {
+            $content = '{"projectVersion": "1.0.0"}'
+            [System.IO.File]::WriteAllText($script:tmpFile, $content, (New-Object System.Text.UTF8Encoding $false))
+            Update-CpmfUipsPackProjectVersion -ProjectJson $script:tmpFile -ProjectVersion '9.9.9' -WhatIf | Out-Null
+            [System.IO.File]::ReadAllText($script:tmpFile) | Should -Be $content
+        }
+    }
+
     Context 'File encoding' {
         It 'writes UTF-8 without BOM' {
             Set-Content $script:tmpFile '{"projectVersion": "1.0.0"}'

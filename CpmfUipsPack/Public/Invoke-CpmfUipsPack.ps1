@@ -30,7 +30,7 @@ function Invoke-CpmfUipsPack {
 
         Invoke-CpmfUipsPack -ProjectJson 'C:\repos\MyProject\project.json'
 
-.PARAMETER Version
+.PARAMETER ShowVersion
     Print the module version and exit without performing any pack work.
 
 .PARAMETER FeedPath
@@ -95,6 +95,12 @@ function Invoke-CpmfUipsPack {
 .PARAMETER ToolBasePath
     Canonical tool root directory. Same as -ToolBase; kept for the shared path-var naming convention.
 
+.PARAMETER ProjectVersion
+    Write this exact version string to project.json before packing, instead of
+    computing an auto-bump. Useful in CI pipelines that derive the version from a
+    git tag (e.g. GITHUB_REF_NAME). Implies -NoBump for subsequent targets.
+    On pack failure the original version is restored.
+
 .PARAMETER ConfigFile
     Path to a .psd1 config file that supplies default values for any parameter
     not explicitly passed on the command line. Explicit parameters always win.
@@ -115,7 +121,7 @@ function Invoke-CpmfUipsPack {
     [OutputType([string[]])]
     param(
         [string]  $ProjectJson     = (Join-Path $PSScriptRoot '..\project.json'),
-        [switch]  $Version,
+        [switch]  $ShowVersion,
         [string]  $FeedPath        = 'C:\Users\Public\nugetfeed',
         [string]  $OutputPath      = '',
         [string[]]$UipcliArgs      = @(),
@@ -133,6 +139,7 @@ function Invoke-CpmfUipsPack {
         [string[]]$Targets         = @('net6'),
         [switch]  $MultiTfm,
         [string]  $CliVersion      = '',   # deprecated
+        [string]  $ProjectVersion  = '',
         [Alias('ToolBase')]
         [string]  $ToolBasePath    = (Join-Path $env:LOCALAPPDATA 'cpmf\tools'),
         [string]  $ConfigFile      = ''
@@ -141,7 +148,7 @@ function Invoke-CpmfUipsPack {
     Set-StrictMode -Version Latest
     $ErrorActionPreference = 'Stop'
 
-    if ($Version) {
+    if ($ShowVersion) {
         $moduleVersion = (Get-Module CpmfUipsPack).Version
         Write-Output "CpmfUipsPack $moduleVersion"
         return
@@ -252,6 +259,7 @@ function Invoke-CpmfUipsPack {
                 -UipcliArgs      $UipcliArgs `
                 -Backend         $Backend `
                 -NoBump:$NoBump `
+                -ProjectVersion  $ProjectVersion `
                 -Targets         $Targets `
                 -CliVersionNet6  $CliVersionNet6 `
                 -CliVersionNet8  $CliVersionNet8 `
@@ -268,6 +276,7 @@ function Invoke-CpmfUipsPack {
             -UipcliArgs      $UipcliArgs `
             -Backend         $Backend `
             -NoBump:$NoBump `
+            -ProjectVersion  $ProjectVersion `
             -Targets         $Targets `
             -CliVersionNet6  $CliVersionNet6 `
             -CliVersionNet8  $CliVersionNet8 `
@@ -294,6 +303,7 @@ function Invoke-MultiTargetPack {
         [string[]] $UipcliArgs,
         [string]   $Backend = 'uipcli',
         [switch]   $NoBump,
+        [string]   $ProjectVersion = '',
         [string[]] $Targets,
         [string]   $CliVersionNet6,
         [string]   $CliVersionNet8,
@@ -317,7 +327,8 @@ function Invoke-MultiTargetPack {
         $targetTag = if ($Targets.Count -gt 1) { $target } else { '' }
 
         # Version bump runs inside the first Invoke-PackAndStage only
-        $thisBump  = if ($isFirstTarget) { $NoBump } else { [switch]$true }
+        $thisBump    = if ($isFirstTarget) { $NoBump } else { [switch]$true }
+        $thisVersion = if ($isFirstTarget) { $ProjectVersion } else { '' }
 
         $staged = Invoke-PackAndStage `
             -ProjectJson    $ProjectJson `
@@ -325,6 +336,7 @@ function Invoke-MultiTargetPack {
             -UipcliArgs     $UipcliArgs `
             -Backend        $Backend `
             -NoBump:$thisBump `
+            -ProjectVersion $thisVersion `
             -UipcliExe      $p.UipcliExe `
             -UipathcliExe   $uipathcliExe `
             -TargetTag      $targetTag `
@@ -376,8 +388,9 @@ function Invoke-PackAndStage {
         [string]  $ProjectJson,
         [string]  $FeedPath,
         [string[]]$UipcliArgs,
-        [string]  $Backend       = 'uipcli',
+        [string]  $Backend        = 'uipcli',
         [switch]  $NoBump,
+        [string]  $ProjectVersion = '',
         [string]  $UipcliExe,
         [string]  $UipathcliExe  = '',
         [string]  $TargetTag     = '',
@@ -389,7 +402,11 @@ function Invoke-PackAndStage {
     $previousVersion = Update-CpmfUipsPackProjectVersion -ProjectJson $ProjectJson -NoBump
 
     if (-not $NoBump) {
-        $newVersion    = Update-CpmfUipsPackProjectVersion -ProjectJson $ProjectJson
+        if ($ProjectVersion -ne '') {
+            $newVersion = Update-CpmfUipsPackProjectVersion -ProjectJson $ProjectJson -ProjectVersion $ProjectVersion
+        } else {
+            $newVersion = Update-CpmfUipsPackProjectVersion -ProjectJson $ProjectJson
+        }
         Write-Verbose "[Publish] Version: $previousVersion → $newVersion"
         $versionBumped = $true
     } else {
